@@ -5,6 +5,8 @@
 # 0.3 Tableauに空欄が影響する列があるため、空欄を埋める
 # 0.31 AWS用にallocation_outputへ変更
 # 0.32 管理単位コード書き換え
+# MASTER_SUPPLIER_CDを追加 git用に名称更新
+
 
 import csv
 # モジュールのインポート
@@ -141,6 +143,13 @@ Output.drop(['7017', '3764_ALL', '0FCN_ALL', 'SPCM_ALL', '3764', '0FCN', 'SPCM']
 
 # カラム順を元に戻す
 Output = Output.loc[:,header]
+
+# MASTER_SUPPLIER_CDを追加
+jri_cost = Output[Output['MASTER_SUPPLIER_FLAG'] == '1']
+jri_cost = jri_cost.rename(columns={'RBS_SUPPLIER_CD': 'MASTER_SUPPLIER_CD'})
+jri_cost = jri_cost.loc[::, ['NO', 'MASTER_SUPPLIER_CD']]
+Output = pd.merge(Output, jri_cost, on='NO', how='left')
+
 
 #空欄を０に
 Output=Output.fillna({'QT_SSD':'1899/12/30','SHIPPING_FIXED_DATE':'1899/12/30','SO_DATE_REVERSE':'1899/12/30','FIXED_SSD':'1899/12/30'})
