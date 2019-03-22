@@ -101,7 +101,7 @@ data.drop(['従来拠点着荷コスト'], axis=1, inplace=True)
 
 # R.B.S対象3764,0FCN,MJP
 # MJPは残し、それ以外の現法は従来データのみ残す
-data = data[((data['現法コード'] == 'MJP') | (data['従来生産拠点フラグ'] == '1'))]
+data = data[((data['現法コード'] == 'MJP') | (data['従来生産拠点フラグ'] == '1') | (data['見積有効日'].notnull()))]
 # 従来がどこか出す
 jri_cost = data[data['従来生産拠点フラグ'] == '1']
 jri_cost = jri_cost.rename(columns={'RBS_受注現法仕入先コード': '従来拠点'})

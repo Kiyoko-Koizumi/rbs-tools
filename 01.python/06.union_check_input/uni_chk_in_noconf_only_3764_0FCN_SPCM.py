@@ -1,7 +1,7 @@
 #0.2 ファイル選択ダイアログの追加と、それに伴うファイル読み込みソースの変更
 # git向けにファイル名変更
 # M単毀損を削除
-# R.B.S対象3764,0FCN,SPCM,MJP
+# R.B.S対象3764,0FCN,SPCM
 
 ##pandasを呼び出す
 import pandas as pd
@@ -99,9 +99,7 @@ data = pd.merge(data, jri_cost, on='番号', how='left')
 data = data[((data['発注現法仕入値'] <= data['従来拠点着荷コスト']) | data['従来拠点着荷コスト'].isnull())]
 data.drop(['従来拠点着荷コスト'], axis=1, inplace=True)
 
-# R.B.S対象3764,0FCN,SPCM,MJP
-# MJPは残し、それ以外の現法は従来データのみ残す
-data = data[((data['現法コード'] == 'MJP') | (data['従来生産拠点フラグ'] == '1') | (data['見積有効日'].notnull()))]
+# R.B.S対象3764,0FCN,SPCM
 # 従来がどこか出す
 jri_cost = data[data['従来生産拠点フラグ'] == '1']
 jri_cost = jri_cost.rename(columns={'RBS_受注現法仕入先コード': '従来拠点'})
