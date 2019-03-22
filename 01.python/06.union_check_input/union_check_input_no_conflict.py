@@ -1,5 +1,6 @@
 #0.2 ファイル選択ダイアログの追加と、それに伴うファイル読み込みソースの変更
 # git向けにファイル名変更
+# M単毀損を削除
 
 ##pandasを呼び出す
 import pandas as pd
@@ -87,6 +88,15 @@ data.loc[data['グローバル番号'].str[:2] == "NA",'ＭＣコード']="NA"
 #実績仕入先コードにあるFCNT・FCNXを0FCNに変換する
 #http://sinhrks.hatenablog.com/entry/2014/11/15/230705
 data.loc[data['実績仕入先コード'].isin(["FCNT","FCNX"]),'実績仕入先コード']="0FCN"
+
+# M単毀損なし
+jri_cost = data[data['従来生産拠点フラグ'] == '1']
+jri_cost = jri_cost.rename(columns={'発注現法仕入値': '従来拠点着荷コスト'})
+jri_cost = jri_cost.loc[::, ['番号', '従来拠点着荷コスト']]
+data = pd.merge(data, jri_cost, on='番号', how='left')
+# M単毀損行を削除 nullの場合は見積りデータなので残す
+data = data[((data['発注現法仕入値'] <= data['従来拠点着荷コスト']) | data['従来拠点着荷コスト'].isnull())]
+data.drop(['従来拠点着荷コスト'], axis=1, inplace=True)
 
 # 受注日時順に並べ替え
 data.reset_index(inplace=True,drop=True)
