@@ -12,10 +12,10 @@ import csv
 csv.field_size_limit(1000000000)
 
 # カレントディレクトリを変更
-os.chdir("/data/rbs/mps/割振り処理期間データ抽出/input")
+os.chdir("/data/rbs/mps/012.warifuri_kikan/input")
 
 #複数ファイル選択
-list_f=os.listdir("/data/rbs/mps/割振り処理期間データ抽出/input")
+list_f=os.listdir("/data/rbs/mps/012.warifuri_kikan/input")
 
 l_name=[]
 for r in range(0,len(list_f)):
@@ -119,7 +119,7 @@ data.drop(['従来拠点'], axis=1, inplace=True)
 data.reset_index(inplace=True,drop=True)
 data = data.sort_values(['JST変換受注日・JST変換見積回答日', 'JST変換受注時間・JST変換見積回答時間', '番号'])
 
-os.chdir("/data/rbs/mps/割振り処理期間データ抽出/output")
+os.chdir("/data/rbs/mps/012.warifuri_kikan/output")
 #アウトプット
 
 data.to_csv("check_input.tsv",sep="\t",index=False)

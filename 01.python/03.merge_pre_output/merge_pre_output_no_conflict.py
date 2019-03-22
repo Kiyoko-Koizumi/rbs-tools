@@ -16,7 +16,8 @@
 #0.15 ホワイトリストカウント、logの表記を修正
 #0.16 MCコード”NA”が消えてしまうので、書き込む
 #0.16 カレンダコード5AAAA→5BBBBへ書き換え、取り込みのファイル名を修正
-#2.0  UNION_pre_outputへ変更　AWS内で実行する形式に書き換え　引数として作業ディレクトリを取得,read_table使用しない
+#2.0  merge_pre_outputへ変更　AWS内で実行する形式に書き換え　引数として作業ディレクトリを取得,read_table使用しない
+#3.0  M単毀損対応　従来生産拠点より着荷コストが上回る選択肢を削除
 
 
 # モジュールのインポート
@@ -308,6 +309,16 @@ jri_e = pd.merge(error_list, n_jri_e, on='番号', how='inner')
 MAS_FLG_E = check_input[((check_input.duplicated(subset=['番号','従来生産拠点フラグ'], keep=False)) & (check_input['従来生産拠点フラグ'] == '1'))]
 check_input = check_input[~((check_input.duplicated(subset=['番号','従来生産拠点フラグ'], keep=False)) & (check_input['従来生産拠点フラグ'] == '1'))]
 
+# M単毀損評価用に着荷コスト列を追加
+check_input['着荷コスト'] = check_input['RBS_仕入先売単価'] + check_input['RBS_輸入運賃'] + check_input['RBS_関税'] + check_input['RBS_輸入諸掛']
+jri_cost =check_input[check_input['従来生産拠点フラグ'] == '1']
+jri_cost = jri_cost.rename(columns={'着荷コスト': '従来拠点着荷コスト'})
+jri_cost = jri_cost.loc[::, ['番号', '従来拠点着荷コスト']]
+check_input = pd.merge(check_input, jri_cost, on='番号', how='left')
+# M単毀損行を削除
+check_input = check_input[((check_input['着荷コスト'] <= check_input['従来拠点着荷コスト']) | check_input['従来拠点着荷コスト'].isnull())]
+check_input.drop(['着荷コスト', '従来拠点着荷コスト'], axis=1, inplace=True)
+
 #check_inputの件数をカウント
 num_check_input=len(check_input)
 
@@ -339,7 +350,7 @@ num_WL = space[:(10-len(str(num_WL)))] + str(num_WL)
 num_QT= space[:(10-len(str(num_QT)))] + str(num_QT)
 
 # 基本情報を既述
-num = ['UNION_pre_output2.0.py', '\n',
+num = ['merge_pre_output_no_conflict.py', '\n',
        '入力','\n',
        num_prep_input, ':準備処理inputREC数', '\n',
        num_True, ':内訳 RBS対象REC数', '\n',
@@ -353,7 +364,7 @@ num = ['UNION_pre_output2.0.py', '\n',
        '\n',
        'エラー','\n']
 
-os.chdir('/data/rbs/mps/UNION_pre_output/output')
+os.chdir('/data/rbs/mps/011.merge_pre_output/output')
 
 # エラーRECがあるかで処理を分岐
 if num_sup_ng != '0':
