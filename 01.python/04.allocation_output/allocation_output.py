@@ -6,6 +6,7 @@
 # 0.31 AWS用にallocation_outputへ変更
 # 0.32 管理単位コード書き換え
 # MASTER_SUPPLIER_CDを追加 git用に名称更新
+# 現法仕入差額を計算
 
 
 import csv
@@ -26,7 +27,7 @@ args =sys.argv
 # 読み込み
 f_pass = args[1] + '/output'
 os.chdir(f_pass)
-Output = pd.read_csv('Output_RBS_OUTPUT_RBS_OUTPUT.tsv', sep='\t', dtype=str)
+Output = pd.read_csv('check_input_RBS_OUTPUT_RBS_OUTPUT.tsv', sep='\t', dtype=str)
 
 # シミュレーション対象RECに割付仕入先フラブを立てる
 Output.loc[((Output['従来生産拠点フラグ'] == '1') &
@@ -144,10 +145,10 @@ Output.drop(['7017', '3764_ALL', '0FCN_ALL', 'SPCM_ALL', '3764', '0FCN', 'SPCM']
 # カラム順を元に戻す
 Output = Output.loc[:,header]
 
-# MASTER_SUPPLIER_CDを追加
+# MASTER_SUPPLIER_CD,MASTER_PURCHASE_PRICEを追加
 jri_cost = Output[Output['MASTER_SUPPLIER_FLAG'] == '1']
-jri_cost = jri_cost.rename(columns={'RBS_SUPPLIER_CD': 'MASTER_SUPPLIER_CD'})
-jri_cost = jri_cost.loc[::, ['NO', 'MASTER_SUPPLIER_CD']]
+jri_cost = jri_cost.rename(columns={'RBS_SUPPLIER_CD': 'MASTER_SUPPLIER_CD', 'RBS_PURCHASE_PRICE': 'MASTER_PURCHASE_PRICE'})
+jri_cost = jri_cost.loc[::, ['NO', 'MASTER_SUPPLIER_CD', 'MASTER_PURCHASE_PRICE']]
 Output = pd.merge(Output, jri_cost, on='NO', how='left')
 
 
