@@ -130,6 +130,10 @@ MNG_Unit = pd.read_csv('MNG_UNIT_20170101_20181231.csv', encoding=font, dtype='o
 MNG_header = MNG_Unit.columns.values
 
 Output = pd.merge(Output,MNG_Unit,left_on='PRODUCT_CD', right_on='PRODUCT_CD',how='left')
+
+# 新拠点NALに対応、NALの場合、RBS_SUPPLIER_CDを0NEWとし、RBS_MANAGEMENT_UNIT_CDはFCNとおなじとする
+Output.loc[Output['RBS_MANAGEMENT_UNIT_CD'] == 'NAL','RBS_SUPPLIER_CD']='0NEW'
+
 # 従来生産拠点のコードを先に転記
 Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='MAL','RBS_MANAGEMENT_UNIT_CD']=Output['7017']
 Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='AAL','RBS_MANAGEMENT_UNIT_CD']=Output['3764']
@@ -139,6 +143,7 @@ Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='SAL','RBS_MANAGEMENT_UNIT_CD']
 Output.loc[Output['RBS_SUPPLIER_CD']=='7017','RBS_MANAGEMENT_UNIT_CD']=Output['7017']
 Output.loc[Output['RBS_SUPPLIER_CD']=='3764','RBS_MANAGEMENT_UNIT_CD']=Output['3764']
 Output.loc[Output['RBS_SUPPLIER_CD']=='0FCN','RBS_MANAGEMENT_UNIT_CD']=Output['0FCN']
+Output.loc[Output['RBS_SUPPLIER_CD']=='0NEW','RBS_MANAGEMENT_UNIT_CD']=Output['0FCN']
 Output.loc[Output['RBS_SUPPLIER_CD']=='SPCM','RBS_MANAGEMENT_UNIT_CD']=Output['SPCM']
 Output.drop(['7017', '3764_ALL', '0FCN_ALL', 'SPCM_ALL', '3764', '0FCN', 'SPCM'], axis=1, inplace=True)
 
