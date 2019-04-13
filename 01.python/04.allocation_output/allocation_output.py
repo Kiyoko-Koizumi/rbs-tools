@@ -131,9 +131,6 @@ MNG_header = MNG_Unit.columns.values
 
 Output = pd.merge(Output,MNG_Unit,left_on='PRODUCT_CD', right_on='PRODUCT_CD',how='left')
 
-# 新拠点NALに対応、NALの場合、RBS_SUPPLIER_CDを0NEWとし、RBS_MANAGEMENT_UNIT_CDはFCNとおなじとする
-Output.loc[Output['RBS_MANAGEMENT_UNIT_CD'] == 'NAL','RBS_SUPPLIER_CD']='0NEW'
-
 # 従来生産拠点のコードを先に転記
 Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='MAL','RBS_MANAGEMENT_UNIT_CD']=Output['7017']
 Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='AAL','RBS_MANAGEMENT_UNIT_CD']=Output['3764']
