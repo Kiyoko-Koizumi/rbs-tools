@@ -37,7 +37,7 @@ df.loc[:,header]
 args=sys.argv
 test=df.fillna({'見積回答SSD':0,'顧客希望納期':0})
 df=test.astype({'見積回答SSD':int,'顧客希望納期':int})
-y=args[1]+' < 顧客希望納期 <'+ args[2]
+y=args[1]+' <= 顧客希望納期 <='+ args[2]
 data=df.query(y)
 
 #MC_CDの”NA”が消えてしまうので、NAを書き込む
@@ -53,11 +53,16 @@ data.loc[data['実績仕入先コード'].isin(["FCNT","FCNX"]),'実績仕入先
 data=data.astype({'発注現法仕入値':float})
 jri_cost = data[data['従来生産拠点フラグ'] == '1']
 jri_cost = jri_cost.rename(columns={'発注現法仕入値': '従来拠点着荷コスト'})
-jri_cost = jri_cost.loc[::, ['番号', '従来拠点着荷コスト']]
-data = pd.merge(data, jri_cost, on='番号', how='left')
+jri_cost = jri_cost.loc[:, ['番号', '顧客希望納期', '従来拠点着荷コスト']]
+# 新番号を付与
+jri_cost.reset_index(inplace=True, drop=True)
+jri_cost.reset_index(inplace=True, drop=False)
+jri_cost = jri_cost.rename(columns={'index': '新番号'})
+data = pd.merge(data, jri_cost, on=['番号', '顧客希望納期'], how='left')
+data['番号'] = data['新番号']
 # M単毀損行を削除 nullの場合は見積りデータなので残す
 data = data[((data['発注現法仕入値'] <= data['従来拠点着荷コスト']) | data['従来拠点着荷コスト'].isnull())]
-data.drop(['従来拠点着荷コスト'], axis=1, inplace=True)
+data.drop(['新番号', '従来拠点着荷コスト'], axis=1, inplace=True)
 data = data.round({'発注現法仕入値': 3})
 
 # 受注日時順に並べ替え
