@@ -3,7 +3,7 @@
 # M単毀損を削除
 # M単毀損削除条件を修正
 # UFなしやランダムにREC抽出しグローバル番号が重複に対応
-# 内製は1月は3現法、2月以降全現法
+# 内製は1月は3現法、2月以降全現法、納期間に合わないRECもエラー化チェック処理実行後に回す想定
 
 ##pandasを呼び出す
 import pandas as pd
@@ -12,6 +12,8 @@ import sys
 import csv
 
 csv.field_size_limit(1000000000)
+
+
 
 # カレントディレクトリを変更
 os.chdir("/data/rbs/mps/012.warifuri_kikan/input")
@@ -85,6 +87,18 @@ data = data[(((data['従来拠点'] == '7017') & (data['RBS_受注現法仕入�
              ((data['従来拠点'] == '0FCN') & ((data['RBS_受注現法仕入先コード'] == '3764') | (data['RBS_受注現法仕入先コード'] == '0FCN') | (data['RBS_受注現法仕入先コード'] == 'SPCM'))) |
                data['従来拠点'].isnull())]
 data.drop(['従来拠点'], axis=1, inplace=True)
+
+# NG_GLOBAL_NOをa1化
+# カレントディレクトリを変更
+os.chdir("/data/rbs/mps/012.warifuri_kikan")
+NG_GLOBAL_NO = pd.read_csv('NG_GLOBAL_NO.csv', encoding='utf-8', dtype='object', index_col=None)
+# dataとNG_GLOBAL_NOをマージ
+data = pd.merge(data, NG_GLOBAL_NO, on=['グローバル番号'], how='left')
+data.loc[data['FLG'].notnull(), '適用ロジック'] = data['FLG']
+data.drop(['FLG'], axis=1, inplace=True)
+
+#ヘッダーの順番が変わってしまうので、戻す
+df.loc[:,header]
 
 # 受注日時順に並べ替え
 data.reset_index(inplace=True,drop=True)
