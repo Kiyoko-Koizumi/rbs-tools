@@ -7,6 +7,7 @@
 # 0.32 管理単位コード書き換え
 # MASTER_SUPPLIER_CDを追加 git用に名称更新
 # 現法仕入差額を計算
+# 1レコードの中にbefore/after拠点を記載
 
 
 import csv
@@ -152,6 +153,11 @@ jri_cost = Output[Output['MASTER_SUPPLIER_FLAG'] == '1']
 jri_cost = jri_cost.rename(columns={'RBS_SUPPLIER_CD': 'MASTER_SUPPLIER_CD', 'RBS_PURCHASE_PRICE': 'MASTER_PURCHASE_PRICE'})
 jri_cost = jri_cost.loc[::, ['NO', 'MASTER_SUPPLIER_CD', 'MASTER_PURCHASE_PRICE']]
 Output = pd.merge(Output, jri_cost, on='NO', how='left')
+# RBS_SUPPLIER_CDを追加
+RBS_supp = Output[Output['FIXED_SUPPLIER_FLAG'] == '1']
+RBS_supp = RBS_supp.rename(columns={'RBS_SUPPLIER_CD': 'FIXED_SUPPLIER_CD'})
+RBS_supp = RBS_supp.loc[::, ['NO', 'FIXED_SUPPLIER_CD']]
+Output = pd.merge(Output, RBS_supp, on='NO', how='left')
 
 
 #空欄を０に
