@@ -8,6 +8,7 @@
 # MASTER_SUPPLIER_CDを追加 git用に名称更新
 # 現法仕入差額を計算
 # 1レコードの中にbefore/after拠点を記載
+# データ削減のため不必要な列を削除
 
 
 import csv
@@ -158,6 +159,36 @@ RBS_supp = Output[Output['FIXED_SUPPLIER_FLAG'] == '1']
 RBS_supp = RBS_supp.rename(columns={'RBS_SUPPLIER_CD': 'FIXED_SUPPLIER_CD'})
 RBS_supp = RBS_supp.loc[::, ['NO', 'FIXED_SUPPLIER_CD']]
 Output = pd.merge(Output, RBS_supp, on='NO', how='left')
+
+# 軽量化のため不要カラムを削除
+Output.drop(["SO_DATE_JST",
+             "SO_TIME_JST",
+             "QT_DEADLINE_DATE",
+             "QT_DEADLINE_TIME",
+             "QT_DEADLINE_DATE_JST",
+             "QT_DEADLINE_TIME_JST",
+             "CUST_CD",
+             "SHIP_TO_CD",
+             "RESULTS_SUBSIDIARY_CD",
+             "RESULTS_MANAGEMENT_UNIT_CD",
+             "ACE_SUPPLIER_CD",
+             "ACE_CATEGORY_CD",
+             "SO_SSD",
+             "QT_SSD",
+             "ACE_REF_SCHEMA",
+             "RBS_SUBSIDIARY_CD",
+             "RBS_INNER_CD",
+             "SUPPLIER_CALENDAR_CD",
+             "SUPPLIER_SHIPPING_CALENDAR_CD",
+             "MC_PLANT_CD_SUB1",
+             "MC_PLANT_CD_SUB2",
+             "TRANSPORT_METHOD_SUB1",
+             "TRANSPORT_METHOD_SUB2",
+             "S_UNIT_PRICE_CCY_CD",
+             "P_UNIT_PRICE_CCY_CD",
+             "SUPPSUB_P_U_PRICE_CCY_CD",
+             "RBS_SSLT",
+             "RBS_TPLT",], axis=1, inplace=True)
 
 
 #空欄を０に
