@@ -75,8 +75,8 @@ for i in range(0, n):
     c = (b[b < a].max())
     #print(c)    # 空白数量より小さい、Max数量　例　150
 
-    df3 = (dfz2[dfz2['qty'] == c])  # 空白なしデータより数量=c(150)を抽出
-    df3['qty'] = a  # 空白なしデータの数量を空白の数量に変更 例　150→201
+    df3 = (dfz2[dfz2['qty'] == c].copy())  # 空白なしデータより数量=c(150)を抽出
+    df3.loc[:, 'qty'] = a  # 空白なしデータの数量を空白の数量に変更 例　150→201
 
     df4 = df4.append(df3,sort=False)    # 空白を埋めたデータを追加
     df4 = df4.sort_values(by=['qty'], ascending=True)   # 数量で並べ替え
@@ -130,8 +130,8 @@ for i in range(0, n):
     c = (b[b < a].max())
     #print(c)    # 空白数量より小さい、Max数量　例　150
 
-    df3 = (dfz2[dfz2['qty'] == c])  # 空白なしデータより数量=c(150)を抽出
-    df3['qty'] = a  # 空白なしデータの数量を空白の数量に変更 例　150→201
+    df3 = (dfz2[dfz2['qty'] == c].copy())  # 空白なしデータより数量=c(150)を抽出
+    df3.loc[:, 'qty'] = a  # 空白なしデータの数量を空白の数量に変更 例　150→201
 
     df4 = df4.append(df3,sort=False)    # 空白を埋めたデータを追加
     df4 = df4.sort_values(by=['qty'], ascending=True)   # 数量で並べ替え
@@ -147,6 +147,7 @@ df6.drop_duplicates(subset=['Subsidiary Code','Product Code','qty'],keep='first'
 
 df7 = pd.merge(df5, df6)    # slide_no(Zetta)とspc_slide_noを結合
 l_order={'Subsidiary Code':0,'Product Code':1,'new_slide_no':2,'slide_no':3,'spc_slide_no':4,'qty':5}
+df7.loc[:, 'new_slide_no'] = ''
 df7 = df7.loc[:, l_order]
 df7['new_slide_no'] = df7.groupby(['Subsidiary Code','Product Code']).cumcount()+1  # 現王コードと商品コードでグループ化　new_slide_noを付ける
 #df7.to_csv(path + 'tsm_spc.txt', sep='\t', encoding='utf_16', index=False)  # 出力
