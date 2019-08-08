@@ -7,12 +7,15 @@ import pandas as pd
 import numpy as np
 path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
 
+# フォルダからExcelファイル名抽出　フルパス
 files = glob.glob(path + 'SPC_Global_inner/*.xlsx')
 lists=[]
 for file in files:
+    #　フルパスからファイル名のみ抽出
     lists.append(file.replace(path + 'SPC_Global_inner',''))
 n=len(lists)
-# ファイルを開く zetta=現法ファイル　spc=駿河見積ファイル　excel=立上ファイル
+
+# ファイルを開く　excel=立上ファイル
 for l in range(0, n):
     excel = pd.read_excel(path + 'SPC_Global_inner/' + lists[l], dtype=object)
 
