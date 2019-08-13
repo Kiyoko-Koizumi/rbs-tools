@@ -53,7 +53,6 @@ df6 = pd.DataFrame()
 df7 = pd.DataFrame()
 
 h_order={'Subsidiary Code':0,'Product Code':1,'slide_no':2,'qty':3}
-#h_order={'Subsidiary Code':0,'Product Code':1,'slide_no':2,'spc_slide_no':4,'qty':5,'new_slide_no':6}
 
 for i in range(0, n):
     dfs = df2.loc[[i]]   # 空白ありのデータ=SPC
@@ -147,17 +146,18 @@ df6.drop_duplicates(subset=['Subsidiary Code','Product Code','qty'],keep='first'
 
 df7 = pd.merge(df5, df6)    # slide_no(Zetta)とspc_slide_noを結合
 l_order={'Subsidiary Code':0,'Product Code':1,'new_slide_no':2,'slide_no':3,'spc_slide_no':4,'qty':5}
-df7.loc[:, 'new_slide_no'] = ''
-df7 = df7.loc[:, l_order]
+df7.loc[:, 'new_slide_no'] = '' # カラム追加
+df7 = df7.loc[:, l_order]   # カラム並べ替え
 df7['new_slide_no'] = df7.groupby(['Subsidiary Code','Product Code']).cumcount()+1  # 現王コードと商品コードでグループ化　new_slide_noを付ける
 #df7.to_csv(path + 'tsm_spc.txt', sep='\t', encoding='utf_16', index=False)  # 出力
 
 #■■■ Step3 Step2にZetta_Sales、SPC_Purchase他データを追加　■■■
 
 new_slide = pd.DataFrame()
-n_order=({'Subsidiary Code':0,'Product Code':1,'new_slide_no':2,'slide_no':3,'spc_slide_no':4,'Stock / MTO':5,
-          'Min Qty of Big Order':6,'Slide Qty ':7,'Slide Sales Pc/Unit ':8,'Slide Purchase Pc/Unit ':9,'Slide Production LT ':10,
-          'Slide Days TS ':11,'Alt Dsct Rt:S ':12,'Alt Dsct Rt:P ':13,'Express L Dsct Rt:S ':14,'Express L Dsct Rt:P ':15,'Express L Slide Days ':16})
+n_order=({'Subsidiary Code':0,'Product Code':1,'new_slide_no':2,'slide_no':3,'spc_slide_no':4,
+          'Slide Qty ':7,'Slide Sales Pc/Unit ':8,'Slide Purchase Pc/Unit ':9,'Slide Production LT ':10,
+          'Slide Days TS ':11,'Alt Dsct Rt:S ':12,'Alt Dsct Rt:P ':13,'Express L Dsct Rt:S ':14,'Express L Dsct Rt:P ':15,
+          'Express L Slide Days ':16,'Cutoff Time for 1day MTO':17})
 
 new_slide = pd.merge(df7, zetta_slide, on=['Subsidiary Code','Product Code','slide_no'])    # Zetta_Slide.txt
 new_slide = pd.merge(new_slide, spc_slide, on=['Subsidiary Code','Product Code','spc_slide_no'])    # SPC_Slide.txt
@@ -165,7 +165,7 @@ new_slide = pd.merge(new_slide, spc_slide, on=['Subsidiary Code','Product Code',
 # カラム名をマスターカラム名に変更
 new_slide = (new_slide.rename(columns={'qty_x': 'Slide Qty ', 'sales': 'Slide Sales Pc/Unit ','purchase':'Slide Purchase Pc/Unit ',
                                         'production':'Slide Production LT ','days_ts':'Slide Days TS ','rt_s':'Alt Dsct Rt:S ','rt_p':'Alt Dsct Rt:P ',
-                                        'l_rt_s':'Express L Dsct Rt:S ','l_rt_p':'Express L Dsct Rt:P ','l_days':'Express L Slide Days '}))
+                                        'l_rt_s':'Express L Dsct Rt:S ','l_rt_p':'Express L Dsct Rt:P ','l_days':'Express L Slide Days ','GTI_Order_Close':'Cutoff Time for 1day MTO'}))
 new_slide = new_slide.loc[:, n_order]
 new_slide.to_csv(path + 'New_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
 
