@@ -71,8 +71,8 @@ if len(UnitPrice[UnitPrice['Err_Flg4'].notnull()]) > 0:# ErrFlgがあった場�
         j_s_name = 'Slide Sales Unit Price ' + str(j)# 例　j_name=Slide Sales Unit Price 2
         i_p_name = 'Slide Purchase Unit Price ' + str(i)
         j_p_name = 'Slide Purchase Unit Price ' + str(j)
-        UnitPrice.loc[(UnitPrice[j_s_name].notnull() & UnitPrice[j_p_name].isnull() & (UnitPrice['Err_Flg4'] == '1')), 'Err_Flg4'] = UnitPrice['Err_Flg4'] + '!'
-        UnitPrice.loc[(UnitPrice[j_s_name].notnull() & UnitPrice[j_p_name].isnull() & (UnitPrice['Err_Flg4'] == '1')), j_p_name] = UnitPrice[i_p_name]
+        UnitPrice.loc[(UnitPrice[j_s_name].notnull() & UnitPrice[j_p_name].isnull()), 'Err_Flg4'] = UnitPrice['Err_Flg4'] + '!'
+        UnitPrice.loc[(UnitPrice[j_s_name].notnull() & UnitPrice[j_p_name].isnull()), j_p_name] = UnitPrice[i_p_name]
 
 # 修正が終わったファイルを出力
 if (len(UnitPrice[UnitPrice['Err_Flg1'].notnull()]) + len(UnitPrice[UnitPrice['Err_Flg4'].notnull()])) > 0:# ErrFlgがあった場合のみ実行
@@ -87,7 +87,7 @@ for v in sub_name:
     sub_up = UnitPrice[UnitPrice['Subsidiary Code'] == v].copy()
     if len(sub_up) > 0:
         sub_up = xheader.append(sub_up, sort=False)
-        sub_up_name = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Vietnam_Master_関連資料/01.Master作成データ/20190807_作成Master/03722108/03722108_filled_UnitPrice_' + v + '.xlsx'
+        sub_up_name = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Vietnam_Master_関連資料/01.Master作成データ/20190807_作成Master/03722108/03722108_' + v + '_UnitPrice_filled.xlsx'
         sub_up.to_excel(sub_up_name, sheet_name='UnitPrice①', index=False)
 
 print('finish!')
