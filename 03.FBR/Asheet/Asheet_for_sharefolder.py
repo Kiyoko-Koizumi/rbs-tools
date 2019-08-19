@@ -10,7 +10,7 @@ import datetime as dt
 FC_A = pd.read_excel('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/input/FC_A表テンプレ.xlsx', sheet_name='FC_A表', dtype=object)
 FC_FCNSPC = pd.read_excel('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/input/FC_A表テンプレ.xlsx', sheet_name='FC_FCNSPC元', dtype=object)
 FC_SPCD = pd.read_excel('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/input/FC_A表テンプレ.xlsx', sheet_name='FC_SPCD', dtype=object)
-FC_MJP = pd.read_excel('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/input/FC_A表テンプレ.xlsx', sheet_name='FC_MJP元', dtype=object)
+FC_MJP = pd.read_excel('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/input/FC_A表テンプレ.xlsx', sheet_name='FC_MJP元', dtype=object, header=2, index_col=0)
 FC_CHNKOR = pd.read_excel('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/input/FC_A表テンプレ.xlsx', sheet_name='FC_KOR元', dtype=object)
 CORR = pd.read_excel('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/input/FC_A表テンプレ.xlsx', sheet_name='補正値', dtype=object)
 FC_ratio = pd.read_excel('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/input/FC_比率マスタ.xlsx', dtype=object)
@@ -23,11 +23,11 @@ FC_A.set_index(['調達Gr', '現法', 'FCフラグ'], inplace=True)
 FC_FCNSPC.rename(columns={'BE': '管理Gr', '現法コード': '現法', 'グループコード': '製造GR', 'メーカコード': '仕入先'}, inplace=True)
 FC_FCNSPC.set_index(['管理Gr', '現法', '分析コード', '商品名', '製造GR', '仕入先'], inplace=True)
 FC_SPCD.rename(columns={'向地': '現法', 'サプライヤ': '管理Gr'}, inplace=True)
-FC_SPCD['SUPPLIER_CD'] = 'SPCD'
-FC_SPCD['管理Gr'] = 'SPC'
-FC_SPCD.set_index(['事業部', 'SUPPLIER_CD', '管理Gr', '現法', 'CLASSIFY_CD', '名称', '新チーム', '通貨'], inplace=True)
-FC_MJP.rename(columns={'製造Gr': '製造GR'}, inplace=True)
-FC_MJP.set_index(['現法', '製造GR', '管理Gr'], inplace=True)
+# FC_SPCD['SUPPLIER_CD'] = 'SPCD' # 私市さんフォームになり不要
+FC_SPCD.loc[FC_SPCD['管理Gr'] == 'SPCD', '管理Gr'] = 'SPC'
+FC_SPCD.set_index(['SUPPLIER_CD', '管理Gr','キー', '現法', 'CLASSIFY_CD', '名称'], inplace=True)
+FC_MJP.rename(columns={'現法': 'SUBSIDIARY_CD', '分析CD': 'CLASSIFY_CD'}, inplace=True)
+FC_MJP.set_index(['担当チーム', 'Gr', 'CLASSIFY_CD', '分析名称', 'SUBSIDIARY_CD'], inplace=True)
 FC_CHNKOR.rename(columns={'製造Gr': '製造GR'}, inplace=True)
 FC_CHNKOR.set_index(['現法', '製造GR', '管理Gr'], inplace=True)
 CORR.rename(columns={'設定月': 'A表設定月', 'Gr': '製造GR'}, inplace=True)
@@ -53,7 +53,7 @@ CORR = CORR.reset_index()
 FC_A.rename(columns={'level_3': '月', 0: '数量の合計'}, inplace=True)
 FC_FCNSPC.rename(columns={'level_6': '月', 0: '数量の合計'}, inplace=True)
 FC_SPCD.rename(columns={'level_8': '月', 0: '数量の合計'}, inplace=True)
-FC_MJP.rename(columns={'level_3': '月', 0: '数量の合計'}, inplace=True)
+FC_MJP.rename(columns={'level_5': '月', 0: '数量の合計'}, inplace=True)
 FC_CHNKOR.rename(columns={'level_3': '月', 0: '数量の合計'}, inplace=True)
 CORR.rename(columns={'level_5': '月', 0: '数量の合計'}, inplace=True)
 CORR.loc[:,'現法'] = '補正値'
@@ -66,21 +66,27 @@ CORR_in = CORR[CORR['振り先'].notnull()].copy()
 CORR_in.loc[:,'管理Gr'] = CORR_in['振り先']
 CORR = CORR_in.append(CORR_out, sort=False)
 # データ修正
+# 4つの分析コードはJ2へ
 FC_FCNSPC.loc[((FC_FCNSPC['分析コード'] == '03633520') | (FC_FCNSPC['分析コード'] == '03633521') | (FC_FCNSPC['分析コード'] == '03723524') | (FC_FCNSPC['分析コード'] == '03733521')), '管理Gr'] = 'J2' + FC_FCNSPC['管理Gr']
 FC_FCNSPC.loc[((FC_FCNSPC['分析コード'] == '03633520') | (FC_FCNSPC['分析コード'] == '03633521') | (FC_FCNSPC['分析コード'] == '03723524') | (FC_FCNSPC['分析コード'] == '03733521')), '製造GR'] = 'J2'
+# vグループはSPCNewへ
 FC_FCNSPC.loc[((FC_FCNSPC['製造GR'] == 'V') & (FC_FCNSPC['仕入先'] == 'SPCM')), '管理Gr'] = 'SPCNew'
 FC_FCNSPC = pd.merge(FC_FCNSPC, cls_cd, left_on=['分析コード', '製造GR'], right_on=['CLASSIFY_CD', '製造GR'], how='inner')
 FC_SPCD.loc[:, '製造GR'] = 'V'
 FC_SPCD.loc[FC_SPCD['CLASSIFY_CD'] == '03722115', '管理Gr'] = 'SPC_V'
 
 
-# FA_数量計画_ECAL現地調達分_各国まとめにFC_比率マスタを乗算
+# FA_数量計画_ECAL現地調達分_各国まとめにFC_比率マスタ、FC_MJPに国内比率を乗算
 # FC_AとFC_ratioをmerge
 FC_ratio = FC_ratio[FC_ratio['備考'].isnull()]
 FC_ratio.drop(['備考', '元の割合', '備考2'], axis=1, inplace=True)
 FC_A = pd.merge(FC_A, FC_ratio, on=['調達Gr', '現法'], how='left')
 FC_A = FC_A.astype({'数量の合計': float, '割合': float})
 FC_A.loc[:,'数量の合計'] = FC_A['数量の合計'] * FC_A['割合']
+# FC_MJPとinter_ratioをmerge
+FC_MJP = pd.merge(FC_MJP, inter_ratio, on=['CLASSIFY_CD', 'SUBSIDIARY_CD'], how='inner')
+FC_MJP = FC_MJP.astype({'比率': float, '数量の合計': float})
+FC_MJP.loc[:,'数量の合計'] = FC_MJP['数量の合計'] * FC_MJP['比率']
 
 # 確認用　その他のカラム名を区別
 FC_A.loc[((FC_A['調達Gr'] == '現地調達') & (FC_A['管理Gr'] == 'その他')), '管理Gr'] = 'その他_現地調達'
