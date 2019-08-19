@@ -16,7 +16,7 @@ for file in files:
     lists.append(file.replace(path + 'SPC_Master/PRODUCT',''))
 n=len(lists)
 
-h_order={'Subsidiary Code':0,'Product Code':1,'spc_slide_no':2, 'qty':3,'purchase':4, 'rt_p':5,'l_rt_p':6,'l_days':7,'data':8}  # スライドHeader並び順
+h_order={'Subsidiary Code':0,'Product Code':1,'Unit Price Check':2,'spc_slide_no':3, 'qty':4,'purchase':5, 'rt_p':6,'l_rt_p':7,'l_days':8,'data':9}  # スライドHeader並び順
 spc_slide = pd.DataFrame(columns=h_order)   # スライド出力用
 spc_data1=pd.DataFrame([],columns=Header.Header())    # ALLデータ出力用
 
@@ -27,12 +27,14 @@ for l in range(0, n):
 
     for i in range(1, 11):
         i = str(i)
-        spc_data2 = (spc_data[['Subsidiary Code_y','Product Code', 'Slide Qty ' + i, 'Slide Purchase Pc/Unit ' + i,
+        spc_data2 = (spc_data[['Subsidiary Code_y','Product Code', 'Unit Price Check', 'Slide Qty ' + i, 'Slide Purchase Pc/Unit ' + i,
                                'Alt Dsct Rt:P ' + i,'Express L Dsct Rt:P ' + i, 'Express L Slide Days ' + i]])
         # 列見出し変更（統一） カラム名並びは「h_order」にて解消
         # Subsidiary Code_yは立上データの現法コード
         spc_data3 = (spc_data2.rename(columns={'Subsidiary Code_y':'Subsidiary Code','slide_no':'spc_slide_no','Slide Qty ' + i: 'qty','Slide Purchase Pc/Unit ' + i: 'purchase',
                                                'Alt Dsct Rt:P ' + i: 'rt_p','Express L Dsct Rt:P ' + i:'l_rt_p', 'Express L Slide Days ' + i:'l_days'}))
+        spc_data3['l_rt_p'] = 0
+        spc_data3['l_days'] = 0
         spc_data3['spc_slide_no'] = i
         spc_data3['data'] = 'spc'
         spc_slide = spc_slide.append(spc_data3,sort=False)  # sort=Falseでアラートが消える

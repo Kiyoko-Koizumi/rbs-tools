@@ -68,7 +68,7 @@ for i in range(0, n):
     #print(b)    # 空白の数量を除いた数量　例　[  1   5  20  35  50  51 100 101 150 301]
 
     dfz2 = (dfz1.rename(columns={'qty_x': 'qty', 'slide_no_x': 'slide_no'}))
-    df4 = df4.append(dfz2,sort=False)
+    df4 = pd.DataFrame(df4.append(dfz2,sort=False))
     df4 = df4.loc[:, h_order]
 
     c = (b[b < a].max())
@@ -157,7 +157,7 @@ new_slide = pd.DataFrame()
 n_order=({'Subsidiary Code':0,'Product Code':1,'new_slide_no':2,'slide_no':3,'spc_slide_no':4,
           'Slide Qty ':7,'Slide Sales Pc/Unit ':8,'Slide Purchase Pc/Unit ':9,'Slide Production LT ':10,
           'Slide Days TS ':11,'Alt Dsct Rt:S ':12,'Alt Dsct Rt:P ':13,'Express L Dsct Rt:S ':14,'Express L Dsct Rt:P ':15,
-          'Express L Slide Days ':16,'Cutoff Time for 1day MTO':17})
+          'Express L Slide Days ':16,'Unit Price Check':17})
 
 new_slide = pd.merge(df7, zetta_slide, on=['Subsidiary Code','Product Code','slide_no'])    # Zetta_Slide.txt
 new_slide = pd.merge(new_slide, spc_slide, on=['Subsidiary Code','Product Code','spc_slide_no'])    # SPC_Slide.txt
@@ -165,8 +165,40 @@ new_slide = pd.merge(new_slide, spc_slide, on=['Subsidiary Code','Product Code',
 # カラム名をマスターカラム名に変更
 new_slide = (new_slide.rename(columns={'qty_x': 'Slide Qty ', 'sales': 'Slide Sales Pc/Unit ','purchase':'Slide Purchase Pc/Unit ',
                                         'production':'Slide Production LT ','days_ts':'Slide Days TS ','rt_s':'Alt Dsct Rt:S ','rt_p':'Alt Dsct Rt:P ',
-                                        'l_rt_s':'Express L Dsct Rt:S ','l_rt_p':'Express L Dsct Rt:P ','l_days':'Express L Slide Days ','GTI_Order_Close':'Cutoff Time for 1day MTO'}))
+                                        'l_rt_s':'Express L Dsct Rt:S ','l_rt_p':'Express L Dsct Rt:P ','l_days':'Express L Slide Days '}))
 new_slide = new_slide.loc[:, n_order]
 new_slide.to_csv(path + 'New_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
 
+# 各カラムを横に展開　Over Slide含む
+m = max(new_slide['new_slide_no'])
+col=({'Slide Qty ','Slide Sales Pc/Unit ','Slide Purchase Pc/Unit ','Slide Production LT ',
+      'Slide Days TS ','Alt Dsct Rt:S ','Alt Dsct Rt:P ','Express L Dsct Rt:S ','Express L Dsct Rt:P ',
+          'Express L Slide Days '})
+
+for col in col:
+    dfs = pd.DataFrame(pd.pivot_table(new_slide,values=col,index=['Subsidiary Code','Product Code'], columns='new_slide_no',aggfunc='max'))
+    for n in range(1, m+1):
+        dfs = dfs.rename(columns={n:col+str(n)})
+    dfz = pd.merge(dfz,dfs, on=['Subsidiary Code','Product Code'])
+
+# ヘッダ並び順作成
+p_order=['Subsidiary Code','Product Code']
+for n in range(1, m+1):
+    col = ['Slide Qty ', 'Slide Sales Pc/Unit ', 'Slide Purchase Pc/Unit ', 'Slide Production LT ', 'Slide Days TS ']
+    for col in col:
+        p_order.append(col+str(n))
+for n in range(1, m + 1):
+    col = ['Alt Dsct Rt:S ', 'Alt Dsct Rt:P ']
+    for col in col:
+        p_order.append(col + str(n))
+for n in range(1, m + 1):
+    col = ['Express L Dsct Rt:S ', 'Express L Dsct Rt:P ','Express L Slide Days ']
+    for col in col:
+        p_order.append(col + str(n))
+#print(p_order)
+
+dfz.drop(columns=['slide_no','spc_slide_no','qty'],inplace=True)    #不要な列を削除
+dfz.drop_duplicates(subset=['Subsidiary Code','Product Code'],keep='first',inplace=True) # 重複削除
+dfz = dfz.loc[:, p_order]
+dfz.to_csv(path + 'Product_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
 print('Fin')
