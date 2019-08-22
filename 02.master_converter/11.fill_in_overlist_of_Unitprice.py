@@ -7,6 +7,7 @@ import csv
 import pandas as pd
 import sys
 import glob
+import os, tkinter, tkinter.filedialog, tkinter.messagebox
 
 csv.field_size_limit(1000000000)
 
@@ -15,11 +16,23 @@ font = 'utf-8'
 # 変数を宣言
 UnitPrice = ()
 
-# 実行する01.Master作成データ以下のファイル名を指定 例'20190807_作成Master/'
-file_pass = '20190809_作成Master'
-# 分析コードを指定　例'03722108'
-cls_cd = '03622711'
-a_pass = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Vietnam_Master_関連資料/01.Master作成データ/' + file_pass + '/' + cls_cd + '/' + cls_cd
+# ファイルの置いてある場所に移動する
+f_pass = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Vietnam_Master_関連資料/01.Master作成データ/'
+
+# ファイル選択ダイアログの表示
+root = tkinter.Tk()
+root.withdraw()
+tkinter.messagebox.showinfo('単価マスタエラー処理','単価マスタのある分析コードフォルダを選択してください！')
+
+# 対象のディレクトリを選択
+dir = tkinter.filedialog.askdirectory(initialdir=f_pass)
+
+# 単価マスタのある分析コードのフォルダを選択
+dir_name = os.path.basename(dir)
+tkinter.messagebox.showinfo('単価マスタのある分析コードフォルダを選択', dir_name)
+
+#
+a_pass = dir + '/' + dir_name
 
 # 単価マスタのファイルパスを取得
 f_pass = glob.glob(a_pass + '_*_UnitPrice.xlsx')
@@ -28,6 +41,7 @@ if len(f_pass)>0:   # 単価マスタのエラーファイルがあれば以下�
     # Excelファイルから情報を取得し一つのファイルにまとめる
     for s in range(0, len(f_pass)):
         f_temp = pd.read_excel(f_pass[s], sheet_name='UnitPrice①', dtype=object)
+        f_temp2 = pd.read_excel(f_pass[s], sheet_name='UnitPrice②', dtype=object)
         if s == 0:
             UnitPrice = f_temp
             # XXXをxheaderに格納
@@ -35,6 +49,8 @@ if len(f_pass)>0:   # 単価マスタのエラーファイルがあれば以下�
             xheader = UnitPrice[UnitPrice['Subsidiary Code'] == 'XXX']
         else:
             UnitPrice = UnitPrice.append(f_temp, sort=False)
+        if len(f_temp2) > 0:# UnitPrice②にデータがあれば加える
+            UnitPrice = UnitPrice.append(f_temp2, sort=False)
 
     # XXXを除く
     UnitPrice = UnitPrice[UnitPrice['Subsidiary Code'] != 'XXX']
@@ -93,11 +109,20 @@ if len(f_pass)>0:   # 単価マスタのエラーファイルがあれば以下�
     for v in sub_name:
         sub_up = UnitPrice[UnitPrice['Subsidiary Code'] == v].copy()
         if len(sub_up) > 0:
-            sub_up = xheader.append(sub_up, sort=False)
+            sub_up1 = sub_up.iloc[:1048574, :].copy()
+            sub_up1 = xheader.append(sub_up1, sort=False)
             # 不要なカラムを削除
-            sub_up.drop(['Err_Flg1', 'Err_Flg2', 'Err_Flg3', 'Err_Flg4'], axis=1, inplace=True)
+            sub_up1.drop(['Err_Flg1', 'Err_Flg2', 'Err_Flg3', 'Err_Flg4'], axis=1, inplace=True)
             sub_up_name = a_pass + '_' + v + '_UnitPrice_filled.txt'
-            sub_up.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n', index=False)
+            sub_up1.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n', index=False)
+            if len(sub_up) > 1048574:
+                sub_up2 = sub_up.iloc[1048574:, :].copy()
+                sub_up2 = xheader.append(sub_up2, sort=False)
+                # 不要なカラムを削除
+                sub_up2.drop(['Err_Flg1', 'Err_Flg2', 'Err_Flg3', 'Err_Flg4'], axis=1, inplace=True)
+                sub_up_name = a_pass + '_' + v + '_UnitPrice_filled2.txt'
+                sub_up2.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n',
+                               index=False)
 else:
     print('単価マスタのエラーファイルはありません！')
 
