@@ -30,7 +30,6 @@ zetta_data1 = pd.DataFrame([],columns=Header.Header())    # ALLデータ出力�
 for l in range(0, n):
     zetta = (pd.read_csv(path + 'Zetta_Product/' + lists[l],sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
     zetta_data = pd.merge(zetta, spc_product, on=['Subsidiary Code', 'Product Code'])  # 立上データの現法コードと型式が一致する現法データ
-
     zetta_data1 = zetta_data1.append(zetta_data,sort=False)
 
     for i in range(1, 11):
@@ -48,6 +47,9 @@ for l in range(0, n):
 
 zetta_slide.drop_duplicates(subset=['Product Code','qty', 'Subsidiary Code'],keep='first',inplace=True) # 型式・現法コード・数量の重複データ削除　先頭行残す
 zetta_slide = (zetta_slide.query('qty > "0"'))  # 数量スライド>0で抽出
+
+h_product = pd.DataFrame(zetta[zetta['Subsidiary Code'] == 'XXX'])  # ヘッダ抽出
+h_product.to_csv(path + 'temp_data/h_Product.txt', sep='\t', encoding='utf_16', index=False)  # h_Product.txt　ヘッダ出力
 
 # Days_Ts.xlsx結合 製作日数・カタログ納期更新
 # 1Rec単位で更新をしているがRec数が増えたら遅くなるのか？

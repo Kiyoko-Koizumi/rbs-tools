@@ -86,7 +86,13 @@ for i in range(0, n):
 
 # Product_Slide.txtにエラーフラグを追加
 p_zetta = (pd.read_csv(path + 'Product_Slide.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
-dfs = pd.DataFrame(pd.crosstab([df['Product Code'],df['Subsidiary Code']], 'err_' + df['err']))
+dfs = pd.DataFrame(pd.crosstab([df['Product Code'], df['Subsidiary Code']], 'err_' + df['err']))
+for i in range(1, 7):   # err_1～6のカラムチェック　無しはカラム名追加
+    if 'err_' + str(i) in dfs.columns:
+        print('err_' + str(i))
+    else:
+        dfs['err_' + str(i)] = ''
+
 p_err = pd.merge(p_zetta, dfs, on=('Subsidiary Code', 'Product Code'), how='left')
 p_err.to_csv(path + 'Product_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
 print('fin')
