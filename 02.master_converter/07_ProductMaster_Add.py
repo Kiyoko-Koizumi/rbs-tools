@@ -1,8 +1,8 @@
 # Product Master 出力　Product.txt　Product_Slide.txt
 import pandas as pd
 import numpy as np
-import openpyxl as px
 import Header
+import Type
 
 path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
 
@@ -45,32 +45,37 @@ for i in range(0, len(sub)):
     df3 = df3.append(h, sort=False) # h_Product.txt Header XXX 追加
     df3 = df3.append(df2.loc[df2['Subsidiary Code'] == sub[i]], sort=False)
     df3 = df3.loc[:, col2]   # カラム並べ替え Header()でなぜかできないので・・・listを指定したらできた！！
-    df3.to_csv(path + 'temp_data/' + sub[i] + '_Product.txt', sep='\t', encoding='utf_16', index=False)  # Product Master 現法毎に出力
+    df3.to_csv(path + 'Update_txt/' + sub[i] + '_Product.txt', sep='\t', encoding='utf_16', index=False)  # Product Master 現法毎に出力　フォルダ「Update_txt」
 
-    if len(dfe.loc[dfe['Subsidiary Code'] == sub[i]]) > 0:  # err_listを現法毎にExcelに出力
+    if len(dfe.loc[dfe['Subsidiary Code'] == sub[i]]) > 0:  # err_listを現法毎にExcelに出力 フォルダ「Err_Excel」
         err = err.append(h, sort=False)
         err = err.append(dfe.loc[dfe['Subsidiary Code'] == sub[i]], sort=False)
         err = err.loc[:, err_h]
-        writer = pd.ExcelWriter(path + 'temp_data/' + sub[i] + '_err_Product.xlsx',engine='xlsxwriter')
-        err.to_excel(writer,sheet_name='Err_List', index=False)
+        err = err.astype(Type.type())  # できた！！
+        writer = pd.ExcelWriter(path + 'Err_Excel/' + sub[i] + '_err_Product.xlsx',engine='xlsxwriter')
+        err.to_excel(writer,sheet_name='Err_List', na_rep='', index=False)
         workbook = writer.book
         worksheet = writer.sheets['Err_List']
         # フォーマットの設定　ヘッダが勝手に太字＆罫線になるので設定変更
-        fmt = workbook.add_format({'bold': False,'border': 0})
+        fmt = workbook.add_format({'bold': False, 'border': 0})
         # カラム名のフォーマット
         [worksheet.write(0, col_num, col_value, fmt) for col_num, col_value in enumerate(err.columns.values, 0)]
         writer.save()
 
     if len(dfo.loc[dfo['Subsidiary Code'] == sub[i]]) > 0:  # over_listを現法毎にExcelに出力
         over = over.append(dfo.loc[dfo['Subsidiary Code'] == sub[i]], sort=False)  # Over_Listシート
+        for f in range(2, len(over.columns)):   # Over_Listの型変更　現法コード・商品コード以外をfloat
+            over[over.columns[f]] = over[over.columns[f]].astype(float)
         dfo = pd.merge(p, dfo, on=('Subsidiary Code', 'Product Code'), how='inner')  # Productシート
         overp = overp.append(h, sort=False)
         overp = overp.append(dfo.loc[dfo['Subsidiary Code'] == sub[i]], sort=False)
-        overp = overp.loc[:, err_h]
 
-        with pd.ExcelWriter(path + 'temp_data/' + sub[i] + '_over_Product.xlsx') as writer:
-            over.to_excel(writer, sheet_name='Over_List', index=False)
-            overp.to_excel(writer, sheet_name='Product', index=False)
+        overp = overp.loc[:, err_h]
+        overp = overp.astype(Type.type())  # できた！！
+
+        with pd.ExcelWriter(path + 'Err_Excel/' + sub[i] + '_over_Product.xlsx') as writer:
+            over.to_excel(writer, sheet_name='Over_List', na_rep='''''', index=False)
+            overp.to_excel(writer, sheet_name='Product', na_rep='''''', index=False)
 
             workbook = writer.book
             fmt = workbook.add_format({'bold': False, 'border': 0})
