@@ -99,7 +99,7 @@ def supp_couont(d, sub_name, calendar_dict, FBR):
     FBR = FBR.loc[:,
           ['日付 の年、月', '製造GR', '内製', '管理Gr', '需要予測数', '生産能力（実力値）', '生産能力（投資済）', '補正値（DLO移管）', '補正値（ECAL戻し）',
            '補正値（FCN売上対策）', '補正値（R.B.S）', '補正値（TENEO移管）', '補正値（メーカー握り）', '補正値（在庫先行発注）', '生産能力（実力値）不足分　',
-           '生産能力（投資済）不足分　','日付_y', 'flag']]
+           '生産能力（投資済）不足分　','日付_y', ]]
     return FBR
 
 
@@ -150,50 +150,17 @@ if __name__ == '__main__':
     # 日付 の年、月の表記を変える
     FBR['日付 の年、月'] = [x.strftime('%Y{0}%m{1}%d{2}').format(*'年月日') for x in FBR['日付_y']]
     #不要な値をデータフレームから削除
-    FBR = FBR.drop(['YEAR','MONTH','日付_x'],axis=1)
+    FBR = FBR.drop(['YEAR','MONTH','日付_x','flag','稼働日数'],axis=1)
 
-
-#カレンダーフォルダにデータがないものを処理する(既存のカレンダーマスタを見に行く)
-    # 非稼働データを読み込む
-    os.chdir(script_pass)
-    nowork_day = pd.read_csv('nowork_day.csv', encoding=font, dtype='object', index_col=None)
-
-    # サプライヤーカレンダーCDの読み込み
-    Supplier_CalenderCD = pd.read_csv('Supplier_CalenderCD.csv', encoding=font, dtype='object', index_col=None)
-    # 各現法、拠点の非稼働日をリスト化
-    sub_name = Supplier_CalenderCD['SP_name']
-    sub_name = sub_name.dropna().tolist()
-    calendar_name = Supplier_CalenderCD['Calendar_name']
-    calendar_name = calendar_name.dropna().tolist()
-    calendar_dict = {}
-    for i in range(0, len(sub_name)):
-       noworkday_df = nowork_day[nowork_day['CALENDAR_CD'] == calendar_name[i]]
-       noworkday_df = noworkday_df.loc[::, ['OFF_DATE']]
-       noworkday_df = noworkday_df.T
-       noworkday_list = noworkday_df.values.tolist()
-       calendar_dict[sub_name[i]] = noworkday_list[0]
-
-    # 日付とサプライヤコード毎に稼働日(0or1)を代入
-    # 並列処理
-    pool = Pool(multi.cpu_count() - 2)
-    list = [(d, sub_name, calendar_dict, FBR) for d in range(15, 45)]
-    FBR_p = pool.map(wrapper, list)
-    pool.close()
-    FBR_SUM = pd.DataFrame(
-    {'日付 の年、月': [], '製造GR': [], '内製': [], '管理Gr': [], '需要予測数': [], '生産能力（実力値）': [], '生産能力（投資済）': [],
-     '補正値（DLO移管）': [], '補正値（ECAL戻し）': [], '補正値（FCN売上対策）': [], '補正値（R.B.S）': [], '補正値（TENEO移管）': [], '補正値（メーカー握り）': [],
-     '補正値（在庫先行発注）': [], '生産能力（実力値）不足分　': [], '生産能力（投資済）不足分　': [],'日付_y':[], 'flag':[] }) #, '稼働日数': []
-    for d in range(30):
-     FBR_SUM = FBR_SUM.append(FBR_p[d], sort=False)
-     FBR_SUM['日付_y'] = pd.to_datetime(FBR_SUM['日付_y'], errors='coerce')
-    #print(FBR_SUM.dtypes)
-
+    #一次結果アウトプット
+    f_name1 = 'FBR_test.tsv'
+    FBR.to_csv(f_name1, sep='\t', encoding=font, index=True)
 
 #カレンダーフォルダにデータがあるものの処理
 #Excelの読み込み、稼働日反映を行う
      # 変数の初期化
     filePath = []
-    folder = 'C://Users/Aoi_Fujishita/OneDrive/PPPF/2.BIツール_見える化/週次検証/Calendar'
+    folder = '//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/稼働日カレンダー'
 
     # folder下のファイルとフォルダを検索
     for root, dirs, files in os.walk(folder):
@@ -236,26 +203,41 @@ if __name__ == '__main__':
        df9 = df9.rename(columns={'日.8': '日付_y', '稼動.8': '稼働日数'})
        df10 = input_book.parse(input_sheet_name[0], skiprows=12, usecols=[55, 58])
        df10 = df10.rename(columns={'日.9': '日付_y', '稼動.9': '稼働日数'})
-       df11 = input_book.parse(input_sheet_name[0], skiprows=12, usecols=[13, 16])
-       df11 = df11.rename(columns={'日.2': '日付_y', '稼動.2': '稼働日数'})
-       df12 = input_book.parse(input_sheet_name[0], skiprows=12, usecols=[61, 64])
-       df12 = df12.rename(columns={'日.10': '日付_y', '稼動.10': '稼働日数'})
-       df13 = input_book.parse(input_sheet_name[0], skiprows=12, usecols=[67, 70])
-       df13 = df13.rename(columns={'日.11': '日付_y', '稼動.11': '稼働日数'})
+       df11 = input_book.parse(input_sheet_name[0], skiprows=12, usecols=[61, 64])
+       df11 = df11.rename(columns={'日.10': '日付_y', '稼動.10': '稼働日数'})
+       df12 = input_book.parse(input_sheet_name[0], skiprows=12, usecols=[67, 70])
+       df12 = df12.rename(columns={'日.11': '日付_y', '稼動.11': '稼働日数'})
 
-       vertical = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11, df12, df13], sort=True)
+       vertical = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11, df12], sort=True)
        for index, row in vertical.iterrows():
         vertical['Supplier'] = sheet_name
 
        calendar_all = calendar_all.append(vertical, ignore_index=True)
 
+    #J2グループとSPCNewを作成
+    #calendar_allを複製
+     add_calendar = calendar_all.copy()
+     add_calendar = add_calendar[((add_calendar['Supplier'] == 'SPC') | (add_calendar['Supplier'] == 'FCN') | (add_calendar['Supplier'] == '駿河阿見')| (add_calendar['Supplier'] == 'その他メーカー'))]
+     add_calendar = add_calendar.replace({'SPC': 'SPCNew', 'FCN': 'J2FCN', '駿河阿見': 'J2駿河阿見', 'その他メーカー': 'J2その他'})
+    #ユーテム分を作成
+     y_calendar = calendar_all.copy()
+     y_calendar = y_calendar[((y_calendar['Supplier'] == 'その他メーカー'))]
+     y_calendar = y_calendar.replace({'その他メーカー': 'ユーテム'})
+
+     calendar_all = pd.concat([calendar_all,add_calendar,y_calendar], sort=True)
+
 
      # FBR帳票用サプライヤー名ファイルの読み込み
-     SP_name = pd.read_csv('C://Users/Aoi_Fujishita/OneDrive/PPPF/2.BIツール_見える化/週次検証/SP_name.csv', encoding='utf-8',
+     SP_name = pd.read_csv('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/稼働日カレンダー/SP_name.csv', encoding='utf-8',
                            dtype='object', index_col=None)
 
      #calendarのカラムを管理Grに揃える
      calendar = pd.merge(calendar_all, SP_name, on=['Supplier'], how='left')
+
+     # 一次結果アウトプット
+     f_name2 = 'calendar.tsv'
+     calendar.to_csv(f_name2, sep='\t', encoding=font, index=True)
+
      #FBRと結合するために、データ型を揃える
      calendar = calendar.loc[:, ['日付_y', '稼働日数', '管理Gr']]
      calendar['日付_y'] = calendar['日付_y'].astype(str)
@@ -264,13 +246,15 @@ if __name__ == '__main__':
      #print(FBR_SUM.dtypes)
      #print(calendar.dtypes)
 
-     #FBRにカレンダーがある管理Gr分の稼働日を反映
-     FBR_SUM = pd.merge(FBR_SUM, calendar, on=['日付_y', '管理Gr'], how='left')
+     #管理Gr分の稼働日を反映
+     FBR_SUM = pd.merge(FBR, calendar, on=['日付_y', '管理Gr'], how='left')
 
-#フラグを基に稼働日nanを埋める
-     FBR_SUM['稼働日数'].fillna(FBR_SUM['flag'], inplace=True)
+     # 一次結果アウトプット
+     f_name3 = 'FBR_temp.tsv'
+     FBR_SUM.to_csv(f_name3, sep='\t', encoding=font, index=True)
 
-#稼働日に基づいて需要予測などの値を修正
+
+     # 稼働日に基づいて需要予測などの値を修正
      FBR_SUM = FBR_SUM.astype(
          {'需要予測数': np.float64, '生産能力（実力値）': np.float64, '稼働日数': np.float64, '生産能力（投資済）': np.float64,
           '補正値（DLO移管）': np.float64, '補正値（ECAL戻し）': np.float64, '補正値（FCN売上対策）': np.float64, '補正値（R.B.S）': np.float64,
@@ -289,12 +273,17 @@ if __name__ == '__main__':
      FBR_SUM.loc[:, '生産能力（実力値）不足分　'] = FBR_SUM['生産能力（実力値）不足分　'] * FBR_SUM['稼働日数']
      FBR_SUM.loc[:, '生産能力（投資済）不足分　'] = FBR_SUM['生産能力（投資済）不足分　'] * FBR_SUM['稼働日数']
 
+
+
      FBR_SUM = FBR_SUM.loc[:,
-           ['日付 の年、月', '製造GR', '内製', '管理Gr', '稼働日数', '需要予測数', '生産能力（実力値）', '生産能力（投資済）', '補正値（DLO移管）', '補正値（ECAL戻し）',
-            '補正値（FCN売上対策）', '補正値（R.B.S）', '補正値（TENEO移管）', '補正値（メーカー握り）', '補正値（在庫先行発注）', '生産能力（実力値）不足分　',
-            '生産能力（投資済）不足分　']]
+               ['日付 の年、月', '製造GR', '内製', '管理Gr', '稼働日数', '需要予測数', '生産能力（実力値）', '生産能力（投資済）', '補正値（DLO移管）', '補正値（ECAL戻し）',
+                '補正値（FCN売上対策）', '補正値（R.B.S）', '補正値（TENEO移管）', '補正値（メーカー握り）', '補正値（在庫先行発注）', '生産能力（実力値）不足分　',
+                '生産能力（投資済）不足分　']]
 
      # ファイルアウトプット
-    f_name = 'FBR_SUM.tsv'
+    f_name = '③FBR需給一覧(SD-33371)_モニター用.tsv'
     FBR_SUM.to_csv(f_name, sep='\t', encoding=font, index=True)
     print('DONE!')
+
+
+
