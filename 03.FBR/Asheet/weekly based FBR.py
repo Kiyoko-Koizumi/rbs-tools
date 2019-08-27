@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
      # ファイルアウトプット
     f_name = '③FBR需給一覧(SD-33371)_モニター用.tsv'
-    FBR_SUM.to_csv(f_name, sep='\t', encoding=font, index=True)
+    FBR_SUM.to_csv(f_name, sep='\t', encoding=font, index=False)
     print('DONE!')
 
 
