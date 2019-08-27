@@ -48,6 +48,7 @@ if len(f_pass)>0:   # 単価マスタのエラーファイルがあれば以下�
 x_header = p_pass[p_pass['Product Code'].str.contains('XXXX')]
 x_header = x_header.drop_duplicates()
 t_header = p_pass.columns
+#o_header =
 
 
 
@@ -112,7 +113,7 @@ UnitPrice.loc[:, 'SUM'] = UnitPrice.loc[:, sura_list].sum(axis=1)
 
 UnitPrice = UnitPrice[UnitPrice['SUM'] < 10]
 slide_over = UnitPrice[UnitPrice['SUM'] >=10 ]
-slide_over.to_csv('//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Vietnam_Master_関連資料/01.Master作成データ/20190807_作成Master/03722108/overlist.txt')
+slide_over.to_csv('//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Vietnam_Master_関連資料/01.Master作成データ/20190807_作成Master/03722108/overlist.txt',sep='\t', encoding='utf_16', index=False)
 
 for ii in range(2, 20):
     jj=ii + 1
