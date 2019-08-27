@@ -21,24 +21,25 @@ for file in files:
 n=len(lists)
 
 h_order=({'Subsidiary Code':0,'Product Code':1,'slide_no':2, 'qty':3, 'sales':4,
-           'production':5, 'days_ts':6, 'rt_s':7,'l_rt_s':8,'data':9})  # Header並び順
+           'rt_s':5,'l_rt_s':6,'data':7})  # Header並び順
 zetta_slide = pd.DataFrame()   # スライド出力用
 # zetta_data1をHeader.pyで並び順を変更
 #zetta_data1 = Header.Header()    # ALLデータ出力用
 zetta_data1 = pd.DataFrame([],columns=Header.Header())    # ALLデータ出力用 こっちの記述でも出来ました。何となくしっくりくるのでこちらで。
+#spc1 = pd.DataFrame()   # SPCの製作日数抽出
 
 for l in range(0, n):
     zetta = (pd.read_csv(path + 'Zetta_Product/' + lists[l],sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
     zetta_data = pd.merge(zetta, spc_product, on=['Subsidiary Code', 'Product Code'])  # 立上データの現法コードと型式が一致する現法データ
     zetta_data1 = zetta_data1.append(zetta_data,sort=False)
 
+
     for i in range(1, 11):
         i = str(i)
-        zetta_data2 = (zetta_data[['Subsidiary Code', 'Product Code', 'Slide Qty ' + i, 'Slide Sales Pc/Unit ' + i,
-                                   'Slide Production LT ' + i, 'Slide Days TS ' + i, 'Alt Dsct Rt:S ' + i, 'Express L Dsct Rt:S ' + i]])
+        zetta_data2 = (zetta_data[['Subsidiary Code', 'Product Code','Slide Qty ' + i, 'Slide Sales Pc/Unit ' + i,
+                                   'Alt Dsct Rt:S ' + i, 'Express L Dsct Rt:S ' + i]])
 # 列見出し変更（統一） カラム名並びは「h_order」にて解消
-        zetta_data3 = (zetta_data2.rename(columns={'slide_no':'slide_no','Slide Qty ' + i: 'qty','Slide Sales Pc/Unit ' + i: 'sales',
-                                                   'Slide Production LT ' + i: 'production','Slide Days TS ' + i: 'days_ts',
+        zetta_data3 = (zetta_data2.rename(columns={'slide_no':'slide_no','Production LT_y':'ProductionLT','Slide Qty ' + i: 'qty','Slide Sales Pc/Unit ' + i: 'sales',
                                                    'Alt Dsct Rt:S ' + i: 'rt_s','Express L Dsct Rt:S ' + i:'l_rt_s'}))
         zetta_data3['l_rt_s'] = 0
         zetta_data3['slide_no'] = i
@@ -47,41 +48,15 @@ for l in range(0, n):
 
 zetta_slide.drop_duplicates(subset=['Product Code','qty', 'Subsidiary Code'],keep='first',inplace=True) # 型式・現法コード・数量の重複データ削除　先頭行残す
 zetta_slide = (zetta_slide.query('qty > "0"'))  # 数量スライド>0で抽出
-
 h_product = pd.DataFrame(zetta[zetta['Subsidiary Code'] == 'XXX'])  # ヘッダ抽出
 h_product.to_csv(path + 'temp_data/h_Product.txt', sep='\t', encoding='utf_16', index=False)  # h_Product.txt　ヘッダ出力
 
 # Days_Ts.xlsx結合 製作日数・カタログ納期更新
 # 1Rec単位で更新をしているがRec数が増えたら遅くなるのか？
-zetta_slide = pd.merge(zetta_slide, days_ts,on=['Subsidiary Code'])
+#zetta_slide = pd.merge(zetta_slide, days_ts,on=['Subsidiary Code'])
 
-df2 = pd.DataFrame()
-n = len(zetta_slide)
-for i in range(0, n):
-    df = zetta_slide.loc[[i]]
-    df['production'] = df['production'].astype(int)
-    df['DaysTS'] = df['DaysTS'].astype(int)
-    df['GTI_Order_Close'] = df['GTI_Order_Close'].astype(int)
-    a = np.array(df['production'])  # 製作日数
-    b = np.array(df['DaysTS'])  # Days_Ts.xlsxの輸送日数
-    c = a - b   # 製作日数用　製作日数-輸送日数
-    d = a + b   # カタログ納期用　製作日数+輸送日数
-    # 製作日数＝製作日数が99の時、製作日数-[DaysTS](輸送日数)、それ以外は製作日数
-    if a == 99:
-        df['production'] = c
-    else:
-        df['production'] = a
-    # カタログ納期＝製作日数が0 Or 99の時、製作日数、 製作日数+[Days_TS](輸送日数)>99の時、99、それ以外は製作日数+[Days_TS](輸送日数)
-    if a == 0 or a == 99:
-        df['days_ts'] = a
-    elif d > 0 and d < 99:
-        df['days_ts'] = d
-    elif d > 99:
-        df['days_ts'] = 99
-    df2 = df2.append(df, sort=False)
-
-df2= df2.loc[:, h_order]   # カラム並べ替え
-df2.to_csv(path + 'temp_data/Zetta_Slide.txt', sep='\t', encoding='utf_16', index=False)    # Zetta_Slide.txt スライドデータのみ出力
+zetta_slide.loc[:, h_order]   # カラム並べ替え
+zetta_slide.to_csv(path + 'temp_data/Zetta_Slide.txt', sep='\t', encoding='utf_16', index=False)    # Zetta_Slide.txt スライドデータのみ出力
 
 # 重量式項目追加
 zetta_data1 = pd.merge(zetta_data1, weight, left_on='Product Code', right_on='型式', how='left')

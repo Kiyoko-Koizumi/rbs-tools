@@ -1,12 +1,14 @@
 # SPC Product SlideデータとMaster抽出
 import glob
 import pandas as pd
+import numpy as np
 import Header
 
 path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
 
 # SPC_Product.txt」データ読み込み
 spc_product = (pd.read_csv(path + 'temp_data/SPC_Target.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
+days_ts = (pd.read_excel(path + 'temp_master/Days_Ts.xlsx'))    # 製作日数・カタログ納期・当日受注締時刻
 
 # フォルダからtxtファイル名抽出　フルパス
 files = glob.glob(path + 'SPC_Master/PRODUCT/*.txt')
@@ -16,7 +18,8 @@ for file in files:
     lists.append(file.replace(path + 'SPC_Master/PRODUCT',''))
 n=len(lists)
 
-h_order={'Subsidiary Code':0,'Product Code':1,'Unit Price Check':2,'spc_slide_no':3, 'qty':4,'purchase':5, 'rt_p':6,'l_rt_p':7,'l_days':8,'data':9}  # スライドHeader並び順
+h_order=({'Subsidiary Code':0,'Product Code':1,'Unit Price Check':2,
+          'spc_slide_no':3, 'qty':4,'production':5,'days_ts':6,'purchase':7, 'rt_p':8,'l_rt_p':9,'l_days':10,'data':11})  # スライドHeader並び順
 spc_slide = pd.DataFrame(columns=h_order)   # スライド出力用
 spc_data1=pd.DataFrame([],columns=Header.Header())    # ALLデータ出力用
 
@@ -28,11 +31,12 @@ for l in range(0, n):
     for i in range(1, 11):
         i = str(i)
         spc_data2 = (spc_data[['Subsidiary Code_y','Product Code', 'Unit Price Check', 'Slide Qty ' + i, 'Slide Purchase Pc/Unit ' + i,
-                               'Alt Dsct Rt:P ' + i,'Express L Dsct Rt:P ' + i, 'Express L Slide Days ' + i]])
+                               'Slide Production LT ' + i, 'Slide Days TS ' + i,'Alt Dsct Rt:P ' + i,'Express L Dsct Rt:P ' + i, 'Express L Slide Days ' + i]])
         # 列見出し変更（統一） カラム名並びは「h_order」にて解消
         # Subsidiary Code_yは立上データの現法コード
         spc_data3 = (spc_data2.rename(columns={'Subsidiary Code_y':'Subsidiary Code','slide_no':'spc_slide_no','Slide Qty ' + i: 'qty','Slide Purchase Pc/Unit ' + i: 'purchase',
-                                               'Alt Dsct Rt:P ' + i: 'rt_p','Express L Dsct Rt:P ' + i:'l_rt_p', 'Express L Slide Days ' + i:'l_days'}))
+                                               'Slide Production LT ' + i:'production', 'Slide Days TS ' + i:'days_ts','Alt Dsct Rt:P ' + i: 'rt_p',
+                                               'Express L Dsct Rt:P ' + i:'l_rt_p', 'Express L Slide Days ' + i:'l_days'}))
         spc_data3['l_rt_p'] = 0
         spc_data3['l_days'] = 0
         spc_data3['spc_slide_no'] = i
@@ -42,8 +46,41 @@ for l in range(0, n):
 # 「temp_data」フォルダに作成
 spc_slide.drop_duplicates(subset=['Product Code', 'qty', 'Subsidiary Code'],keep='first',inplace=True) # 型式・数量の重複データ削除　先頭行残す
 spc_slide = (spc_slide.query('qty > "0"'))  # 数量スライド>0で抽出
-spc_slide.to_csv(path + 'temp_data/SPC_Slide.txt', sep='\t', encoding='utf_16', index=False)    # SPC_Slide.txt スライドデータのみ出力
 
+# Days_Ts.xlsx結合 製作日数・カタログ納期更新
+# 1Rec単位で更新をしているがRec数が増えたら遅くなるのか？
+spc_slide = pd.merge(spc_slide, days_ts,on=['Subsidiary Code'])
+
+# 製作日数は「SPC」を見なければいけない。
+df2 = pd.DataFrame()
+n = len(spc_slide)
+for i in range(0, n):
+    df = spc_slide.loc[[i]]
+    df['production'] = df['production'].astype(int)
+    df['DaysTS'] = df['DaysTS'].astype(int)
+    df['GTI_Order_Close'] = df['GTI_Order_Close'].astype(int)
+    a = np.array(df['production'])  # 製作日数
+    b = np.array(df['DaysTS'])  # Days_Ts.xlsxの輸送日数
+    c = a - b   # 製作日数用　製作日数-輸送日数
+    d = a + b   # カタログ納期用　製作日数+輸送日数
+    # 製作日数＝製作日数が99の時、製作日数-[DaysTS](輸送日数)、それ以外は製作日数
+    if a == 99:
+        df['production'] = c
+    else:
+        df['production'] = a
+    # カタログ納期＝製作日数が0 Or 99の時、製作日数、 製作日数+[Days_TS](輸送日数)>99の時、99、それ以外は製作日数+[Days_TS](輸送日数)
+    if a == 0 or a == 99:
+        df['days_ts'] = a
+    elif d > 0 and d < 99:
+        df['days_ts'] = d
+    elif d > 99:
+        df['days_ts'] = 99
+    df2 = df2.append(df, sort=False)
+
+df2['GTI_Order_Close'] = df2['GTI_Order_Close'].astype(int) # 小数点がつくので整数型へ　出力はstr
+df2.to_csv(path + 'temp_data/SPC_Slide.txt', sep='\t', encoding='utf_16', index=False)    # SPC_Slide.txt スライドデータのみ出力
+
+spc_data1 = spc_data1.rename(columns={'Subsidiary Code_x':'Subsidiary Code'})
 spc_data1.drop(columns=['分析コード','立上日','仕入先','Subsidiary Code_y'],inplace=True)    #不要な列を削除
 spc_data1.drop_duplicates(subset=['Product Code'],keep='first',inplace=True) # 型式の重複データ削除　先頭行残す
 spc_data1.to_csv(path + 'temp_data/SPC_Product.txt', sep='\t', encoding='utf_16', index=False)  # SPC_Product.txt　ALL出力

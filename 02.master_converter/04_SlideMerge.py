@@ -154,10 +154,10 @@ df7['new_slide_no'] = df7.groupby(['Subsidiary Code','Product Code']).cumcount()
 #■■■ Step3 Step2にZetta_Sales、SPC_Purchase他データを追加　■■■
 
 new_slide = pd.DataFrame()
-n_order=({'Subsidiary Code':0,'Product Code':1,'new_slide_no':2,'slide_no':3,'spc_slide_no':4,
-          'Slide Qty ':7,'Slide Sales Pc/Unit ':8,'Slide Purchase Pc/Unit ':9,'Slide Production LT ':10,
-          'Slide Days TS ':11,'Alt Dsct Rt:S ':12,'Alt Dsct Rt:P ':13,'Express L Dsct Rt:S ':14,'Express L Dsct Rt:P ':15,
-          'Express L Slide Days ':16,'Unit Price Check':17})
+n_order=({'Subsidiary Code':0, 'Product Code':1, 'new_slide_no':2, 'slide_no':3, 'spc_slide_no':4,
+          'Slide Qty ':7, 'Slide Sales Pc/Unit ':8, 'Slide Purchase Pc/Unit ':9, 'Slide Production LT ':10,
+          'Slide Days TS ':11, 'Alt Dsct Rt:S ':12, 'Alt Dsct Rt:P ':13, 'Express L Dsct Rt:S ':14, 'Express L Dsct Rt:P ':15,
+          'Express L Slide Days ':16, 'Unit Price Check':17})
 
 new_slide = pd.merge(df7, zetta_slide, on=['Subsidiary Code','Product Code','slide_no'])    # Zetta_Slide.txt
 new_slide = pd.merge(new_slide, spc_slide, on=['Subsidiary Code','Product Code','spc_slide_no'])    # SPC_Slide.txt
@@ -182,13 +182,13 @@ col=({'Slide Qty ','Slide Sales Pc/Unit ','Slide Purchase Pc/Unit ','Slide Produ
 
 for col in col:
     dfs = pd.DataFrame(pd.pivot_table(new_slide,values=col,index=['Subsidiary Code','Product Code'], columns='new_slide_no',aggfunc='max'))
-    for n in range(1, m+1):
+    for n in range(1, m + 1):
         dfs = dfs.rename(columns={n:col+str(n)})
-    dfz = pd.merge(dfz,dfs, on=['Subsidiary Code','Product Code'])
+    dfz = pd.merge(dfz, dfs, on=['Subsidiary Code','Product Code'])
 
 # ヘッダ並び順作成
-p_order=['Subsidiary Code','Product Code']
-for n in range(1, m+1):
+p_order=['Subsidiary Code', 'Product Code']
+for n in range(1, m + 1):
     col = ['Slide Qty ', 'Slide Sales Pc/Unit ', 'Slide Purchase Pc/Unit ', 'Slide Production LT ', 'Slide Days TS ']
     for col in col:
         p_order.append(col+str(n))
@@ -201,6 +201,10 @@ for n in range(1, m + 1):
     for col in col:
         p_order.append(col + str(n))
 #print(p_order)
+
+spc_slide = spc_slide[['Subsidiary Code','Product Code']]
+spc_slide.drop_duplicates(subset=['Subsidiary Code','Product Code'],keep='first',inplace=True) # 重複削除
+dfz = pd.merge(dfz, spc_slide, on=['Subsidiary Code','Product Code'])
 
 dfz.drop(columns=['slide_no','spc_slide_no','qty'],inplace=True)    #不要な列を削除
 dfz.drop_duplicates(subset=['Subsidiary Code','Product Code'],keep='first',inplace=True) # 重複削除
