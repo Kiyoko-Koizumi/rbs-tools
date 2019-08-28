@@ -31,6 +31,7 @@ f_pass = glob.glob(a_pass + '_Over_*_Product.xlsx')
 
 #p_pass = pd.read_excel(a_pass + '_Over_CHN_Product.xlsx', sheet_names='product', dtype=object)
 
+'''
 if len(f_pass)>0:   # 単価マスタのエラーファイルがあれば以下の処理を実施
     # Excelファイルから情報を取得し一つのファイルにまとめる
     for s in range(0, len(f_pass)):
@@ -44,16 +45,12 @@ if len(f_pass)>0:   # 単価マスタのエラーファイルがあれば以下�
             p_pass = p_pass.append(f_temp, sort=False)
 
 
-
-x_header = p_pass[p_pass['Product Code'].str.contains('XXXX')]
+x_header = p_pass[p_pass['Over_List'].str.contains('XXXX')]
 x_header = x_header.drop_duplicates()
-t_header = p_pass.columns
-#o_header =
+'''
 
 
-
-
-
+'''
 p_pass = p_pass.drop(['Slide Qty 1','Slide Sales Pc/Unit 1','Slide Purchase Pc/Unit 1','Slide Production LT 1','Slide Days TS 1','Slide Qty 2','Slide Sales Pc/Unit 2',
                       'Slide Purchase Pc/Unit 2','Slide Production LT 2','Slide Days TS 2','Slide Qty 3','Slide Sales Pc/Unit 3','Slide Purchase Pc/Unit 3','Slide Production LT 3',
                       'Slide Days TS 3','Slide Qty 4','Slide Sales Pc/Unit 4','Slide Purchase Pc/Unit 4','Slide Production LT 4','Slide Days TS 4','Slide Qty 5','Slide Sales Pc/Unit 5',
@@ -61,6 +58,7 @@ p_pass = p_pass.drop(['Slide Qty 1','Slide Sales Pc/Unit 1','Slide Purchase Pc/U
                       'Slide Qty 7','Slide Sales Pc/Unit 7','Slide Purchase Pc/Unit 7','Slide Production LT 7','Slide Days TS 7','Slide Qty 8','Slide Sales Pc/Unit 8','Slide Purchase Pc/Unit 8','Slide Production LT 8',
                       'Slide Days TS 8','Slide Qty 9','Slide Sales Pc/Unit 9','Slide Purchase Pc/Unit 9','Slide Production LT 9','Slide Days TS 9','Slide Qty 10','Slide Sales Pc/Unit 10','Slide Purchase Pc/Unit 10',
                       'Slide Production LT 10','Slide Days TS 10'],axis=1)
+'''
 
 
 
@@ -74,9 +72,9 @@ if len(f_pass)>0:   # 単価マスタのエラーファイルがあれば以下�
         f_temp.loc[:,'Subsidiary Code'] = f_pass[s][-16:-13]
         if s == 0:
             UnitPrice = f_temp
-            # XXXをxheaderに格納
-            #header = UnitPrice.columns
-            #xheader = UnitPrice[UnitPrice['Product Code'].str.contains('XXXX')]
+            #XXXをxheaderに格納
+            header = UnitPrice.columns
+            x_header = UnitPrice[UnitPrice['Product Code'].str.contains('XXXX')]
         else:
             UnitPrice = UnitPrice.append(f_temp, sort=False)
 
@@ -112,7 +110,7 @@ for i in range(1, 20):  # 2~20までで仕入値がないカラムは1つ前の�
 UnitPrice.loc[:, 'SUM'] = UnitPrice.loc[:, sura_list].sum(axis=1)
 
 UnitPrice = UnitPrice[UnitPrice['SUM'] < 10]
-slide_over = UnitPrice[UnitPrice['SUM'] >=10]
+slide_over = UnitPrice[UnitPrice['SUM'] > 9]
 slide_over.to_csv('//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Vietnam_Master_関連資料/01.Master作成データ/20190807_作成Master/03722108/overlist.txt',sep='\t', encoding='utf_16', index=False)
 
 for ii in range(2, 20):
@@ -136,38 +134,54 @@ for ii in range(2, 20):
         UnitPrice.loc[UnitPrice[sura] == 0, x_spp] = UnitPrice[y_spp]
         UnitPrice.loc[UnitPrice[sura] == 0, x_splt] = UnitPrice[y_splt]
         UnitPrice.loc[UnitPrice[sura] == 0, x_sdts] = UnitPrice[y_sdts]
-
+'''
 UnitPrice= UnitPrice.drop(['Production LT','Min Qty of Big Order',	'Max Qty of Big Order','Alt Dsct Rt:S 1' ,
                            'Alt Dsct Rt:P 1' ,	'Alt Dsct Rt:S 2' ,	'Alt Dsct Rt:P 2' ,	'Alt Dsct Rt:S 3' ,
                            'Alt Dsct Rt:P 3' ,	'Alt Dsct Rt:S 4' ,	'Alt Dsct Rt:P 4' ,	'Alt Dsct Rt:S 5' ,
                            'Alt Dsct Rt:P 5' ,	'Alt Dsct Rt:S 6' ,	'Alt Dsct Rt:P 6' ,	'Alt Dsct Rt:S 7' ,
                            'Alt Dsct Rt:P 7' ,	'Alt Dsct Rt:S 8' ,	'Alt Dsct Rt:P 8' ,	'Alt Dsct Rt:S 9' ,
                            'Alt Dsct Rt:P 9' ,	'Alt Dsct Rt:S 10' ,'Alt Dsct Rt:P 10' ],axis=1)
+'''
 
-output = pd.merge(p_pass,UnitPrice, on = ['Product Code', 'Subsidiary Code'],how='inner')
-
-#output = df.output([t_header])
-
-#output= output(t_header)
-output= output.loc[:, t_header]
+#output = pd.merge(p_pass,UnitPrice, on = ['Product Code', 'Subsidiary Code'],how='inner')
 
 
-# 現法毎にファイル出力
+
+    #output= output(t_header)
+    #output= output.loc[:, t_header]
+
+
+    # 現法毎にファイル出力
 sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM']
 for v in sub_name:
-    sub_up = output[output['Subsidiary Code'] == v].copy()
+    sub_up = UnitPrice[UnitPrice['Subsidiary Code'] == v].copy()
     if len(sub_up) > 0:
         sub_up1 = sub_up.iloc[:1048574, :].copy()
         sub_up1 = x_header.append(sub_up1, sort=False)
-        sub_up_name = a_pass + '_' + v + '_Productmst_filled.txt'
-        sub_up1.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n', index=False)
+        sub_up1.drop(['Subsidiary Code','スラ1/2' ,'スラ2/3' ,'スラ3/4' ,'スラ4/5' ,'スラ5/6' ,'スラ6/7' ,'スラ7/8' ,'スラ8/9' ,'スラ9/10' ,'スラ10/11'
+                        ,'スラ11/12' ,'スラ12/13' ,'スラ13/14' ,'スラ14/15' ,'スラ15/16' ,'スラ16/17' ,'スラ17/18' ,'スラ18/19' ,'スラ19/20' ,
+                          'SUM'], axis=1, inplace=True)
+        sub_up_name = a_pass + '_' + v + '_Productmst_filled.xlsx'
+        sub_up1.to_excel(sub_up_name,index=False)
+        # sub_up_name = a_pass + '_' + v + '_Productmst_filled.txt'
+        # sub_up1.to_csvl(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n', index=False)
+
         if len(sub_up) > 1048574:
             sub_up2 = sub_up.iloc[1048574:, :].copy()
             sub_up2 = x_header.append(sub_up2, sort=False)
-            sub_up_name = a_pass + '_' + v + '_Productmst_filled2.txt'
-            sub_up2.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n',index=False)
+            sub_up2.drop(['Subsidiary Code', 'スラ1/2', 'スラ2/3', 'スラ3/4', 'スラ4/5', 'スラ5/6', 'スラ6/7', 'スラ7/8', 'スラ8/9', 'スラ9/10', 'スラ10/11'
+                             , 'スラ11/12', 'スラ12/13', 'スラ13/14', 'スラ14/15', 'スラ15/16', 'スラ16/17', 'スラ17/18', 'スラ18/19',
+                          'スラ19/20','SUM'], axis=1, inplace=True)
+            sub_up_name = a_pass + '_' + v + '_Productmst_filled2.xlsx'
+            sub_up2.to_excel(sub_up_name,index=False)
+            # sub_up_name = a_pass + '_' + v + '_Productmst_filled.txt'
+            # sub_up2.to_csvl(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n',index=False)
 
 
+
+
+else:
+    print('単価マスタのエラーファイルはありません！')
 
 print('finish')
 
