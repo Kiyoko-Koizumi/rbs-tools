@@ -18,7 +18,7 @@ df['DaysTS'] = df['DaysTS'].astype(int) # 輸送日数　数値型
 dfs = pd.DataFrame()
 dfs['Process Mode'] = '2'  # 処理区分   なぜか？空白
 dfs['Master ID'] = '01'  # 登録区分　なぜか？空白
-dfs['Subsidiary Code'] = df['Subsidiary Code']  # 現法コード
+dfs['Subsidiary Code'] = df['Subsidiary Code_z']  # 現法コード
 dfs['Inner Code'] = df['Inner Code_z']  # インナーコード
 dfs['Product Code'] = df['Product Code']  # 商品コード
 dfs['Stock / MTO'] = df['Stock / MTO_z']  # 在庫／受注生産品
@@ -186,60 +186,64 @@ for i in range(0, n):
     else:
         df['Weight'] = np.array(dfs['Weight Calc_y'])  # ちょっと怪しい、、＆この条件は？
 
-    # USA処理　商品納入先・商品納入先区分　発注納期
-    if np.array(df['Subsidiary Code']) == 'USA':
-        df['Product Delivery'] = 'C'    # 商品納入先
-        df['Packing List Delivery'] = 'C'   # 納品書納入先区分
-        if np.array(df['Stock / MTO']) == '0' and np.array(dfs['Production LT for STOCK']) == '1' and np.array(dfs['TI対象_z']) == '1':    # TI
-            df['Production LT'] = 2     # 製作日数
-            df['Production LT for STOCK'] = 2   # 発注納期
-        elif np.array(df['Stock / MTO']) == '0' and np.array(dfs['Production LT for STOCK']) == '1' and np.array(dfs['TI対象_z']) != '1':  # 非TI
-            df['Production LT'] = df['Production LT'] + 1   # 製作日数=製作日数+1
-            df['Production LT for STOCK'] = df['Production LT'] + 1 # 発注納期=製作日数+1
+    # TI・非TI
+    if np.array(df['TI対象_z']) == '1':
+        df['Production LT'] = 1 # 製作日数
+        df['Days to Ship on Catalog'] = 1 + df['DaysTS']  # カタログ納期
+        df['Express A Calc Type for Sales'] = '0'  # ストークA適用フラグ
+        df['Express A Sales Pc/Unit'] = 0  # ストークA売単価
+        df['Express A Calc Type for Purchase'] = '0'  # ストークA仕入計算方法
+        df['Express A Purchase Pc/Unit'] = 0  # ストークA仕入単価
+        df['Express A Production LT'] = 0  # ストークA製作日数
+        df['Special Express A Calc Type for Sales'] = '0'  # ストークA早割適用フラグ
+        df['Special Express A Sales Pc/Unit'] = 0  # ストークA早割売単価
+        df['Plant Express A Purchase Calc'] = '0'  # ストークA同梱仕入計算方法
+        df['Plant Express A Purchase Pc/Unit'] = 0  # ストークA同梱仕入単価
+        df['Express B Calc Type for Sales'] = '0'  # ストークB適用フラグ
+        df['Express B Sales Pc/Unit'] = 0  # ストークB売単価
+        df['Express B Purchase Pc/Unit'] = 0  # ストークB仕入単価
+        df['Express B Production LT'] = 0  # ストークB製作日数
+        df['Express C Calc Type for Sales'] = '0'  # ストークC適用フラグ
+        df['Express C Sales Pc/Unit'] = 0  # ストークC売単価
+        df['Express C Purchase Pc/Unit'] = 0  # ストークC仕入単価
+        df['Express C Production LT'] = 0  # ストークC製作日数
 
-    # USA以外のTI・非TI
-    if np.array(df['Subsidiary Code']) != 'USA':
-        if np.array(df['TI対象_z']) == '1':
-            df['Production LT'] = 1 # 製作日数
+    if np.array(df['TI対象_z']) != '1':
+        if np.array(df['Express A Sales Pc/Unit']) == '0':  # ストークA売単価=0
             df['Express A Calc Type for Sales'] = '0'  # ストークA適用フラグ
-            df['Express A Sales Pc/Unit'] = 0  # ストークA売単価
             df['Express A Calc Type for Purchase'] = '0'  # ストークA仕入計算方法
             df['Express A Purchase Pc/Unit'] = 0  # ストークA仕入単価
             df['Express A Production LT'] = 0  # ストークA製作日数
+
+        if np.array(df['Special Express A Sales Pc/Unit']) == '0':  # ストークA早割売単価
             df['Special Express A Calc Type for Sales'] = '0'  # ストークA早割適用フラグ
-            df['Special Express A Sales Pc/Unit'] = 0  # ストークA早割売単価
             df['Plant Express A Purchase Calc'] = '0'  # ストークA同梱仕入計算方法
             df['Plant Express A Purchase Pc/Unit'] = 0  # ストークA同梱仕入単価
+
+        if np.array(df['Express B Sales Pc/Unit']) == '0':  # ストークB早割売単価
             df['Express B Calc Type for Sales'] = '0'  # ストークB適用フラグ
-            df['Express B Sales Pc/Unit'] = 0  # ストークB売単価
             df['Express B Purchase Pc/Unit'] = 0  # ストークB仕入単価
             df['Express B Production LT'] = 0  # ストークB製作日数
+
+        if np.array(df['Express C Sales Pc/Unit']) == '0':  # ストークC早割売単価
             df['Express C Calc Type for Sales'] = '0'  # ストークC適用フラグ
-            df['Express C Sales Pc/Unit'] = 0  # ストークC売単価
             df['Express C Purchase Pc/Unit'] = 0  # ストークC仕入単価
             df['Express C Production LT'] = 0  # ストークC製作日数
 
-        if np.array(df['TI対象_z']) != '1':
-            if np.array(df['Express A Sales Pc/Unit']) == '0':  # ストークA売単価=0
-                df['Express A Calc Type for Sales'] = '0'  # ストークA適用フラグ
-                df['Express A Calc Type for Purchase'] = '0'  # ストークA仕入計算方法
-                df['Express A Purchase Pc/Unit'] = 0  # ストークA仕入単価
-                df['Express A Production LT'] = 0  # ストークA製作日数
-
-            if np.array(df['Special Express A Sales Pc/Unit']) == '0':  # ストークA早割売単価
-                df['Special Express A Calc Type for Sales'] = '0'  # ストークA早割適用フラグ
-                df['Plant Express A Purchase Calc'] = '0'  # ストークA同梱仕入計算方法
-                df['Plant Express A Purchase Pc/Unit'] = 0  # ストークA同梱仕入単価
-
-            if np.array(df['Express B Sales Pc/Unit']) == '0':  # ストークB早割売単価
-                df['Express B Calc Type for Sales'] = '0'  # ストークB適用フラグ
-                df['Express B Purchase Pc/Unit'] = 0  # ストークB仕入単価
-                df['Express B Production LT'] = 0  # ストークB製作日数
-
-            if np.array(df['Express C Sales Pc/Unit']) == '0':  # ストークC早割売単価
-                df['Express C Calc Type for Sales'] = '0'  # ストークC適用フラグ
-                df['Express C Purchase Pc/Unit'] = 0  # ストークC仕入単価
-                df['Express C Production LT'] = 0  # ストークC製作日数
+    # USA処理　カタログ納期・商品納入先・商品納入先区分　発注納期
+    if np.array(df['Subsidiary Code']) == 'USA':
+        df['Product Delivery'] = 'C'    # 商品納入先
+        df['Packing List Delivery'] = 'C'   # 納品書納入先区分
+        if np.array(df['TI対象_z']) == '1':    # TI
+            df['Production LT'] = 2     # 製作日数
+            df['Days to Ship on Catalog'] = 2 + df['DaysTS']
+        elif np.array(df['TI対象_z']) != '1':    # TI
+            df['Production LT'] = df['Production LT'] + 1  # 製作日数=製作日数+1
+            df['Days to Ship on Catalog'] = df['Production LT'] + df['DaysTS']
+        if np.array(df['Stock / MTO']) == '0' and np.array(df['Production LT for STOCK']) == '1' and np.array(df['TI対象_z']) == '1':    # TI
+            df['Production LT for STOCK'] = 2   # 発注納期
+        elif np.array(df['Stock / MTO']) == '0' and np.array(df['Production LT for STOCK']) == '1' and np.array(df['TI対象_z']) != '1':  # 非TI
+            df['Production LT for STOCK'] = df['Production LT'] + 1 # 発注納期=製作日数+1
 
     df1 = df1.append(df, sort=False)
 df1.drop(columns=['TI対象_z', 'Weight_y', 'Weight Calc Mode_y', 'Weight Calc_y', '位置', 'Weight2', 'DaysTS'], inplace=True)    #不要な列を削除
