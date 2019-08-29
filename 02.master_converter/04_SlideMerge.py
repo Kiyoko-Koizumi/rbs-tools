@@ -175,6 +175,8 @@ new_slide = new_slide.loc[:, n_order]
 new_slide.to_csv(path + 'New_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
 
 # 各カラムを横に展開　Over Slide含む
+new_slide = (pd.read_csv(path + 'New_Slide.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
+new_slide['new_slide_no'] = new_slide['new_slide_no'].astype(int)
 m = max(new_slide['new_slide_no'])
 col=({'Slide Qty ','Slide Sales Pc/Unit ','Slide Purchase Pc/Unit ','Slide Production LT ',
       'Slide Days TS ','Alt Dsct Rt:S ','Alt Dsct Rt:P ','Express L Dsct Rt:S ','Express L Dsct Rt:P ',
@@ -182,6 +184,7 @@ col=({'Slide Qty ','Slide Sales Pc/Unit ','Slide Purchase Pc/Unit ','Slide Produ
 
 for col in col:
     dfs = pd.DataFrame(pd.pivot_table(new_slide,values=col,index=['Subsidiary Code','Product Code'], columns='new_slide_no',aggfunc='max'))
+
     for n in range(1, m + 1):
         dfs = dfs.rename(columns={n:col+str(n)})
     dfz = pd.merge(dfz, dfs, on=['Subsidiary Code','Product Code'])
@@ -200,7 +203,6 @@ for n in range(1, m + 1):
     col = ['Express L Dsct Rt:S ', 'Express L Dsct Rt:P ','Express L Slide Days ']
     for col in col:
         p_order.append(col + str(n))
-#print(p_order)
 
 spc_slide = spc_slide[['Subsidiary Code','Product Code']]
 spc_slide.drop_duplicates(subset=['Subsidiary Code','Product Code'],keep='first',inplace=True) # 重複削除
@@ -208,6 +210,7 @@ dfz = pd.merge(dfz, spc_slide, on=['Subsidiary Code','Product Code'])
 
 dfz.drop(columns=['slide_no','spc_slide_no','qty'],inplace=True)    #不要な列を削除
 dfz.drop_duplicates(subset=['Subsidiary Code','Product Code'],keep='first',inplace=True) # 重複削除
+
 dfz = dfz.loc[:, p_order]
 dfz.to_csv(path + 'Product_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
 print('Fin')

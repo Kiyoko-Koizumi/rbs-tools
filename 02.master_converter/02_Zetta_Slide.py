@@ -8,7 +8,7 @@ path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Pyth
 
 # SPC_Product.txt」データ読み込み
 spc_product = (pd.read_csv(path + 'temp_data/SPC_Target.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
-days_ts = (pd.read_excel(path + 'temp_master/Days_Ts.xlsx'))    # 製作日数・カタログ納期・当日受注締時刻
+days_ts = (pd.read_excel(path + 'temp_master/Days_Ts.xlsx', dtype=object))    # 製作日数・カタログ納期・当日受注締時刻
 weight = pd.read_excel(path + 'temp_master/【提出用】ベトナム重量ロジック★最終アップリスト_CC.xlsx', dtype=object) # 重量式
 
 # フォルダからtxtファイル名抽出　フルパス
