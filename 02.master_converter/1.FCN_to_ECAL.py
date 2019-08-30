@@ -7,6 +7,7 @@ import pandas as pd
 import xlrd
 
 
+
 path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_FCN_Master'
 
 #格納場所指定 & textをcsvに変換 \tタブ　sep=','csv
@@ -150,23 +151,23 @@ output2['IO Supply Means (URG)']=""
 #56	Express T Production LT→0変更
 output2['Express T Production LT']="0"
 #57	Apply TI to Plant 1→0変更
-output2['Apply TI to Plant 1']=""
+output2['Apply TI to Plant 1']="0"
 #58	Apply TI to Plant 2→0変更
-output2['Apply TI to Plant 2']=""
+output2['Apply TI to Plant 2']="0"
 #59	Apply TI to Plant 3→0変更
-output2['Apply TI to Plant 3']=""
+output2['Apply TI to Plant 3']="0"
 #60	Apply TI to Plant 4→0変更
-output2['Apply TI to Plant 4']=""
+output2['Apply TI to Plant 4']="0"
 #61	Apply TI to Plant 5→0変更
-output2['Apply TI to Plant 5']=""
+output2['Apply TI to Plant 5']="0"
 #62	Apply TI to Plant 6→0変更
-output2['Apply TI to Plant 6']=""
+output2['Apply TI to Plant 6']="0"
 #63	Apply TI to Plant 7→0変更
-output2['Apply TI to Plant 7']=""
+output2['Apply TI to Plant 7']="0"
 #64	Apply TI to Plant 8→0変更
-output2['Apply TI to Plant 8']=""
+output2['Apply TI to Plant 8']="0"
 #65	Apply TI to Plant 9→0変更
-output2['Apply TI to Plant 9']=""
+output2['Apply TI to Plant 9']="0"
 #66	Partial Delivery Threshold→0変更
 output2['Partial Delivery Threshold']="0"
 #67	Express L Calc Type for Sales→0変更
@@ -244,37 +245,37 @@ output2['Express T Calc Type for Sales']=""
 #103	Express T Sales Pc/Unit→""
 output2['Express T Sales Pc/Unit']=""
 #104	Express A Calc Type for Sales→""
-output2['Express A Calc Type for Sales']=""
+output2['Express A Calc Type for Sales']="0"
 #105	Express A Sales Pc/Unit→""
-output2['Express A Sales Pc/Unit']=""
+output2['Express A Sales Pc/Unit']="0"
 #106	Special Express A Calc Type for Sales→""
-output2['Special Express A Calc Type for Sales']=""
+output2['Special Express A Calc Type for Sales']="0"
 #107	Special Express A Sales Pc/Unit→""
-output2['Special Express A Sales Pc/Unit']=""
+output2['Special Express A Sales Pc/Unit']="0"
 #108	Express B Calc Type for Sales→""
-output2['Express B Calc Type for Sales']=""
+output2['Express B Calc Type for Sales']="0"
 #109	Express B Sales Pc/Unit→""
-output2['Express B Sales Pc/Unit']=""
+output2['Express B Sales Pc/Unit']="0"
 #110	Express C Calc Type for Sales→""
-output2['Express C Calc Type for Sales']=""
+output2['Express C Calc Type for Sales']="0"
 #111	Express C Sales Pc/Unit→""
-output2['Express C Sales Pc/Unit']=""
+output2['Express C Sales Pc/Unit']="0"
 #112	Express T Days TS→""
-output2['Express T Days TS']=""
+output2['Express T Days TS']="0"
 #113	Express A Days TS→""
-output2['Express A Days TS']=""
+output2['Express A Days TS']="0"
 #114	Express B Days TS→""
-output2['Express B Days TS']=""
+output2['Express B Days TS']="0"
 #115	Express C Days TS→""
-output2['Express C Days TS']=""
+output2['Express C Days TS']="0"
 #116	Express A Direct Ship Flg→""
-output2['Express A Direct Ship Flg']=""
+output2['Express A Direct Ship Flg']="0"
 #117	Express B Direct Ship Flg→""
-output2['Express B Direct Ship Flg']=""
+output2['Express B Direct Ship Flg']="0"
 #118	Express C Direct Ship Flg→""
-output2['Express C Direct Ship Flg']=""
+output2['Express C Direct Ship Flg']="0"
 #119	Express T Direct Ship Flg→""
-output2['Express T Direct Ship Flg']=""
+output2['Express T Direct Ship Flg']="0"
 #114　Prod Mst for Alt Supplier→0変更
 output2['Prod Mst for Alt Supplier']=0
 
