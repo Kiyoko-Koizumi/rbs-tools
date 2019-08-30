@@ -51,12 +51,15 @@ for i in range(0, len(sub)):
     df3 = df3.append(df2.loc[df2['Subsidiary Code'] == sub[i]], sort=False)
     df3 = df3.loc[:, col2]   # カラム並べ替え Header()でなぜかできないので・・・listを指定したらできた！！
     df3.to_csv(path + 'Update_txt/' + sub[i] + '_Product.txt', sep='\t', encoding='utf_16', index=False)  # Product Master 現法毎に出力　フォルダ「Update_txt」
-    #df3 = df3.astype(Type.type())   # 検証用
-    #df3.to_excel(path + 'Update_txt/' + sub[i] + '_Product.xlsx', index=False)  # 検証用
+
+    df3 = df3.astype(Type.type())   # 検証用
+    df3 = df3.fillna('')  # 検証用
+    df3.to_excel(path + 'Update_txt/' + sub[i] + '_Product.xlsx', index=False)  # 検証用
 
     if len(dfe.loc[dfe['Subsidiary Code'] == sub[i]]) > 0:  # err_listを現法毎にExcelに出力 フォルダ「Err_Excel」
         err = err.append(h, sort=False)
         err = err.append(dfe.loc[dfe['Subsidiary Code'] == sub[i]], sort=False)
+        err = err.fillna('')  # nanを空白に置き換え
         err = err.loc[:, err_h]
         err = err.astype(Type.type())  # できた！！
         writer = pd.ExcelWriter(path + 'Err_Excel/' + sub[i] + '_err_Product.xlsx',engine='xlsxwriter')
@@ -78,6 +81,7 @@ for i in range(0, len(sub)):
 
         overp = overp.append(h, sort=False)
         overp = overp.append(dfo.loc[dfo['Subsidiary Code'] == sub[i]], sort=False)
+        overp = overp.fillna('')    # nanを空白に置き換え
 
         overp = overp.loc[:, err_h]
         overp = overp.astype(Type.type())  # できた！！

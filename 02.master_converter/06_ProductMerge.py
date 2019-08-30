@@ -5,16 +5,15 @@ import Header
 
 path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/temp_data/'
 
-z_p = (pd.read_csv(path + 'Zetta_Product.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
-s_p = (pd.read_csv(path + 'SPC_Product.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
+z_p = (pd.read_csv(path + 'Zetta_Product.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
+s_p = (pd.read_csv(path + 'SPC_Product.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
 
-df = pd.DataFrame(pd.merge(z_p, s_p, on=('Product Code'), suffixes=['_z','_s'], how='left'))
+df = pd.DataFrame(pd.merge(z_p, s_p, on=('Product Code'), suffixes=['_z', '_s'], how='left'))
 #df.to_csv(path + '20190819_Product.txt', sep='\t', encoding='utf_16', index=False)  # Zetta_Product.txt　ALL出力
 
 # カラム名末尾「_z」=Zetta　「_s」=Spc
 df['Production LT_s'] = df['Production LT_s'].astype(int)   # 製作日数　数値型
 df['DaysTS'] = df['DaysTS'].astype(int) # 輸送日数　数値型
-
 dfs = pd.DataFrame()
 dfs['Process Mode'] = '2'  # 処理区分   なぜか？空白
 dfs['Master ID'] = '01'  # 登録区分　なぜか？空白
