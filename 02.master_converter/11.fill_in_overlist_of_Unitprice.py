@@ -114,14 +114,14 @@ if len(f_pass)>0:   # 単価マスタのエラーファイルがあれば以下�
             # 不要なカラムを削除
             sub_up1.drop(['Err_Flg1', 'Err_Flg2', 'Err_Flg3', 'Err_Flg4'], axis=1, inplace=True)
             sub_up_name = a_pass + '_' + v + '_UnitPrice_filled.txt'
-            sub_up1.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n', index=False)
+            sub_up1.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
             if len(sub_up) > 1048574:
                 sub_up2 = sub_up.iloc[1048574:, :].copy()
                 sub_up2 = xheader.append(sub_up2, sort=False)
                 # 不要なカラムを削除
                 sub_up2.drop(['Err_Flg1', 'Err_Flg2', 'Err_Flg3', 'Err_Flg4'], axis=1, inplace=True)
                 sub_up_name = a_pass + '_' + v + '_UnitPrice_filled2.txt'
-                sub_up2.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\n',
+                sub_up2.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n',
                                index=False)
 else:
     print('単価マスタのエラーファイルはありません！')
