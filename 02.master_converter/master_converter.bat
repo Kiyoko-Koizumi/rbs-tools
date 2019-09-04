@@ -26,7 +26,7 @@
 
  
 
-python %HOMEPATH%\PycharmProjects\rbs-tools\02.master_converter\menu.py
+python %~dp0\script_file\menu.py
 
  
 
