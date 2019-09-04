@@ -26,7 +26,7 @@
 
  
 
-python %~dp0\Simulation_data_table_menu.py.py
+python %~dp0\Simulation_data_table_menu.py
 
  
 

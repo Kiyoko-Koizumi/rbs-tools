@@ -24,7 +24,7 @@ def Orders_creation_change_date():
 
         # 受注実績データの取得
         # ここの1行を変更 askopenfilename → askopenfilenames
-        file = tkinter.filedialog.askopenfilenames(filetypes=fTyp, initialdir=iDir)
+        file = tkinter.filedialog.askopenfilenames(filetypes=fTyp, initialdir=iDir, title='受注実績データの取得')
 
         # 選択ファイルリスト作成
         list_f = list(file)
@@ -326,7 +326,7 @@ def Orders_creation_change_date():
         data = mk_order.query(y)
         f_name = 'mk_order_' + '4Q' + '.tsv'
         data.to_csv(f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n', index=False)
-    print('Finish!')
+    print('ダミーオーダー作成　日付変更あり Finish!')
 
 if __name__ == '__main__':
     Orders_creation_change_date()
