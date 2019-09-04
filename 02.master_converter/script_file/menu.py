@@ -74,7 +74,7 @@ def select_func():
     button12.grid(row=12, column=2)
     button13.grid(row=13, column=4)
     root.mainloop()
-
+    return
 
 if __name__ == '__main__':
     select_func()
