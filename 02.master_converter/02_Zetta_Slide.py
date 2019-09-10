@@ -3,9 +3,10 @@ import glob
 import pandas as pd
 import numpy as np
 import Header
+import datetime
 
 path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
-
+print(datetime.datetime.now())
 # SPC_Product.txt」データ読み込み
 spc_product = (pd.read_csv(path + 'temp_data/SPC_Target.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
 days_ts = (pd.read_excel(path + 'temp_master/Days_Ts.xlsx', dtype=object))    # 製作日数・カタログ納期・当日受注締時刻
@@ -68,3 +69,4 @@ zetta_data1.drop(columns=['分析コード_x','立上日','仕入先','分析コ
 zetta_data1 = zetta_data1.rename(columns={'Weight_x':'Weight','Weight Calc Mode_x': 'Weight Calc Mode','Weight Coefficient_x': 'Weight Coefficient','Weight Calc_x':'Weight Calc'})
 zetta_data1.to_csv(path + 'temp_data/Zetta_Product.txt', sep='\t', encoding='utf_16', index=False)  # Zetta_Product.txt　ALL出力
 print('Fin')
+print(datetime.datetime.now())

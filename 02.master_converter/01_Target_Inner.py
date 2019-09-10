@@ -18,9 +18,10 @@ n=len(lists)
 # ファイルを開く　excel=立上ファイル
 for l in range(0, n):
     excel = pd.read_excel(path + 'SPC_Global_inner/' + lists[l], dtype=object)
+    print(lists[l])
 
 # 立上データ出力
-SUBSIDIARY_CD=['CHN','KOR','TIW','SGP','MYS','THA','USA','GRM','VNM','JKT','IND']   # 現法増えた際はこちらも追加
+SUBSIDIARY_CD=['CHN','KOR','TIW','SGP','MYS','THA','USA','GRM','VNM','JKT','IND', 'MJP']   # 現法増えた際はこちらも追加
 df3 = pd.DataFrame([],columns=['分析コード', 'Product Code', '立上日', '仕入先', 'Subsidiary Code'])
 df4 = pd.DataFrame([],columns=['分析コード', 'Product Code', '立上日', '仕入先', 'Subsidiary Code','新TI対象'])
 
@@ -29,10 +30,10 @@ for SUBSIDIARY_CD in SUBSIDIARY_CD:
     df = pd.DataFrame(data)
     df2 = df.rename(columns={'型式':'Product Code',SUBSIDIARY_CD+'立上日':'立上日',SUBSIDIARY_CD+'仕入先':'仕入先'})  #列見出し変更（統一）
     df2['Subsidiary Code']=SUBSIDIARY_CD  #「現法コード」列追加
-    df2 = df2.query('立上日 == 190712')    # 日付指定をどうするか？
+    df2 = df2.query('立上日 == "20190617"')    # 日付指定をどうするか？
     if len(df2)>0:
         df3 = df3.append(df2)
-
+print(len(df3))
 if len(df3)>0:
     # 立上データにTIフラグを追加する
     fcn_inner = pd.read_excel(path+'temp_master/FCNインナーリスト.xlsx',dtype=object) # TI対象ファイル
