@@ -3,26 +3,37 @@
 
 
 import pandas as pd
+import os
+import glob
+import datetime as dt
 
-import xlrd
-
-
+# スクリプトのあるディレクトリの絶対パスを取得
+script_pass = os.path.dirname(os.path.abspath(__name__))
+script_pass = script_pass.replace('script_file', '01_to_ECAL')
 
 path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_FCN_Master'
 
-#格納場所指定 & textをcsvに変換 \tタブ　sep=','csv
-pmst = pd.read_csv(path + '/ZETTA_DL_MST_TEXT/1.FCN_to_ECAL/PRODUCT_MST.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False)
+# 単価マスタのファイルパスを取得
+f_pass = glob.glob(script_pass + '/Product_master/*Pro*.txt')
 
-# XXXをxheaderに格納
-xheader = pmst[pmst['Subsidiary Code'] == 'XXX']
-# XXXを除く
-pmst = pmst[pmst['Subsidiary Code'] != 'XXX']
+if len(f_pass) > 0:  # 単価マスタのエラーファイルがあれば以下の処理を実施
+    # Excelファイルから情報を取得し一つのファイルにまとめる
+    for s in range(0, len(f_pass)):
+        f_temp = pd.read_csv(f_pass[s], sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False)
+        if s == 0:
+            pmst = f_temp
+            # XXXをxheaderに格納
+            header = pmst.columns
+            xheader = pmst[pmst['Subsidiary Code'] == 'XXX']
+        else:
+            pmst = pmst.append(f_temp, sort=False)
 
 #参照先の対象インナー
-df = pd.read_excel(path + '/REFERENCE_EXECL/1.reference_FCN_to_ECAL.xlsx',dtype={'Inner Code':object})
+df = pd.read_excel(path + '/Inner_list/to_ECAL.xlsx', dtype=object)
+df = df.stack()
 
 #輸出禁止品除外（対象現法が台湾のみ適用）
-TIW = pd.read_excel(path + '/IROIRO/TIW.xlsx',dtype={'Inner Code':object})
+TIW = pd.read_excel(path + '/Reference_file/TIW.xlsx',dtype={'Inner Code':object})
 TIW=TIW.drop(['No','CLASSIFY_CD','CLASSIFY_NM','Type','Model','TIW_DATE','TIW_SUPPLIER','CHN_DATE','CHN_SUPPLIER'],axis=1)
 #台湾輸出禁止品にフラグ1を挿入
 TIW.loc[:, 'TIW_FLG'] = '1'
@@ -279,10 +290,27 @@ output2['Express T Direct Ship Flg']="0"
 #114　Prod Mst for Alt Supplier→0変更
 output2['Prod Mst for Alt Supplier']=0
 
-
-
-
-
+# 現法毎にファイル出力
+sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM']
+Today = dt.datetime.today().strftime("%Y%m%d")
+count_sub = 0
+for v in sub_name:
+    sub_up = output2[output2['Subsidiary Code'] == v].copy()
+    if len(sub_up) > 0:
+        sub_up1 = sub_up.iloc[:1048574, :].copy()
+        sub_up1 = xheader.append(sub_up1, sort=False)
+        # 不要なカラムを削除
+        sub_up_name = script_pass + '/Output/' + count_sub + v + 'Pro' + Today + '.txt'
+        count_sub = count_sub + 1
+        sub_up1.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
+        if len(sub_up) > 1048574:
+            sub_up2 = sub_up.iloc[1048574:, :].copy()
+            sub_up2 = xheader.append(sub_up2, sort=False)
+            # 不要なカラムを削除
+            sub_up2.drop(['Err_Flg1', 'Err_Flg2', 'Err_Flg3', 'Err_Flg4'], axis=1, inplace=True)
+            sub_up_name = a_pass + '_' + v + '_UnitPrice_filled2.txt'
+            sub_up2.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n',
+                           index=False)
 
 # XXX行を戻す
 output2 = xheader.append(output2, sort=False)

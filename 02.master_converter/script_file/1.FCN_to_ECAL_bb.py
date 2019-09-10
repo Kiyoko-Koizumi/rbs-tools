@@ -1,34 +1,44 @@
 #商品マスタ　FCNtoECAL
 
-
-
+import csv
+import glob
 import pandas as pd
-
 import xlrd
 
+font = 'shift_jisx0213'
+csv.field_size_limit(1000000000)
+
+#path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_FCN_Master'
+path = 'C:/Users/Chanwook_Heo/Documents/04.マスタ作成/検証/1.reference_FCN_to_ECAL'
+inner_list = glob.glob(path + '/2.INNER_LIST/INNER_LIST_*.xlsx')
+master_list = glob.glob(path + '/1.moto/PRODUCT_*.txt')
+
+inner_matome= pd.DataFrame()
+for s in range(0,len(inner_list)):
+    a_temp = pd.read_excel(inner_list[s],dtype={'Inner Code':object})
+    #a_temp = a_temp.drop(['PRODUCT_CD', 'STOCK_DIV', 'CLASSIFY_CD', 'SUPPLIER_CD'], axis=1)
+    inner_matome = inner_matome.append(a_temp, ignore_index=True)
 
 
-path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_FCN_Master'
 
-#格納場所指定 & textをcsvに変換 \tタブ　sep=','csv
-pmst = pd.read_csv(path + '/ZETTA_DL_MST_TEXT/1.FCN_to_ECAL/PRODUCT_MST.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False)
 
-# XXXをxheaderに格納
-xheader = pmst[pmst['Subsidiary Code'] == 'XXX']
-# XXXを除く
-pmst = pmst[pmst['Subsidiary Code'] != 'XXX']
+master_matome = pd.DataFrame()
+for x in range(0,len(master_list)):
+    b_temp = pd.read_csv(master_list[x],sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False)
+    master_matome = master_matome.append(b_temp,ignore_index=True)
 
-#参照先の対象インナー
-df = pd.read_excel(path + '/REFERENCE_EXECL/1.reference_FCN_to_ECAL.xlsx',dtype={'Inner Code':object})
+x_header = master_matome[master_matome['Product Code'].str.contains('XXXX')]
+x_header = x_header.drop_duplicates()
+
 
 #輸出禁止品除外（対象現法が台湾のみ適用）
-TIW = pd.read_excel(path + '/IROIRO/TIW.xlsx',dtype={'Inner Code':object})
+TIW = pd.read_excel(path + '/3.IROIRO/TIW.xlsx',dtype={'Inner Code':object})
 TIW=TIW.drop(['No','CLASSIFY_CD','CLASSIFY_NM','Type','Model','TIW_DATE','TIW_SUPPLIER','CHN_DATE','CHN_SUPPLIER'],axis=1)
 #台湾輸出禁止品にフラグ1を挿入
 TIW.loc[:, 'TIW_FLG'] = '1'
 
 #pmst[pmst['Inner Code'] == df['Inner Code']]
-output1 = pd.merge(pmst, df, on=['Inner Code'], how= 'inner')
+output1 = pd.merge(master_matome, inner_matome , on=['Subsidiary Code','Inner Code'], how= 'inner')
 output2 = pd.merge(output1,TIW,on =['Inner Code'], how= 'left')
 
 
@@ -240,10 +250,10 @@ output2['Express L Slide Days 10']="0"
 output2['Cutoff Time for TI to Plant 1']=""
 #101	Cutoff Time for TI to Plant 2→変更
 output2['Cutoff Time for TI to Plant 2']=""
-#102	Express T Calc Type for Sales→""
-output2['Express T Calc Type for Sales']=""
+#102	Express T Calc Type for Sales→"0"
+output2['Express T Calc Type for Sales']="0"
 #103	Express T Sales Pc/Unit→""
-output2['Express T Sales Pc/Unit']=""
+output2['Express T Sales Pc/Unit']="0"
 #104	Express A Calc Type for Sales→""
 output2['Express A Calc Type for Sales']="0"
 #105	Express A Sales Pc/Unit→""
@@ -279,16 +289,40 @@ output2['Express T Direct Ship Flg']="0"
 #114　Prod Mst for Alt Supplier→0変更
 output2['Prod Mst for Alt Supplier']=0
 
+bunseki = output2['Classify Code']
+bunseki = bunseki.drop_duplicates()
+
+    # 現法毎にファイル出力
+sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM']
+for v in sub_name:
+    sub_up0 = output2[output2['Subsidiary Code'] == v].copy()
+    classify = bunseki
+    for w in classify:
+        sub_up = sub_up0[sub_up0['Classify Code'] == w].copy()
+        if len(sub_up) > 0:
+            sub_up1 = sub_up.iloc[:1048574, :].copy()
+            sub_up1 = x_header.append(sub_up1, sort=False)
+            sub_up_name =path + '/4.output/FCN_to_ECAL_' + v + w +'_Productmst.txt'
+            sub_up1.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
+            if len(sub_up) > 1048574:
+                sub_up2 = sub_up.iloc[1048574:, :].copy()
+                sub_up2 = x_header.append(sub_up2, sort=False)
+                sub_up_name =path + '/4.output/FCN_to_ECAL_' + v + w +'_Productmst2.txt'
+                sub_up2.to_csv(sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
 
 
+
+
+  #sub_up_name = a_pass + '_' + v + '_Productmst_filled.xlsx'
+        #sub_up1.to_excel(sub_up_name, index=False)
 
 
 
 # XXX行を戻す
-output2 = xheader.append(output2, sort=False)
+#output2 = x_header.append(output2, sort=False)
 
 
-output2.to_csv(path + '/OUTPUT/output(FCN_to_ECAL).txt', sep='\t', encoding='utf_16', index=False)
+#output2.to_csv(path + '/4.output/output(FCN_to_ECAL).txt', sep='\t', encoding='utf_16', index=False)
 
 
 

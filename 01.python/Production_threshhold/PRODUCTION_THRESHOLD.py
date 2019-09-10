@@ -1,6 +1,6 @@
 # coding: utf-8
 # PRODUCTION_THRESHOLD 新規作成 2019/6/3
-#
+# AIO追加
 
 # モジュールのインポート
 import os, tkinter, tkinter.filedialog, tkinter.messagebox
@@ -19,19 +19,20 @@ import multiprocessing as multi
 
 def supp_couont(d, sub_name, calendar_dict, THRESHOLD):
     THRESHOLD = THRESHOLD[THRESHOLD['SUPPLIER_CD'] == sub_name[d]].copy()
-    for s in range(len(THRESHOLD)):
-        if THRESHOLD.iloc[s, 9].strftime('%Y-%m-%d') in calendar_dict[sub_name[d]]:
-            THRESHOLD.iloc[s, 10] = 0
-        else:
-            THRESHOLD.iloc[s, 10] = 1
-        THRESHOLD.iloc[s, 9] = THRESHOLD.iloc[s, 9] .strftime('%Y%m%d')
+    if len(THRESHOLD):
+        for s in range(len(THRESHOLD)):
+            if THRESHOLD.iloc[s, 9].strftime('%Y-%m-%d') in calendar_dict[sub_name[d]]:
+                THRESHOLD.iloc[s, 10] = 0
+            else:
+                THRESHOLD.iloc[s, 10] = 1
+            THRESHOLD.iloc[s, 9] = THRESHOLD.iloc[s, 9] .strftime('%Y%m%d')
+        # 上限、下限、納期遅延ラインの非稼働日を0に
+        THRESHOLD = THRESHOLD.astype({'PRODUCTION_ABILITY_MAX': int, 'PRODUCTION_ABILITY_MIN': int, 'DUE_DATE_DELAYED_LINE': int, 'others': int})
+        THRESHOLD.loc[:,'PRODUCTION_ABILITY_MAX'] = THRESHOLD['PRODUCTION_ABILITY_MAX'] * THRESHOLD['others']
+        THRESHOLD.loc[:,'PRODUCTION_ABILITY_MIN'] = THRESHOLD['PRODUCTION_ABILITY_MIN'] * THRESHOLD['others']
+        THRESHOLD.loc[:,'DUE_DATE_DELAYED_LINE'] = THRESHOLD['DUE_DATE_DELAYED_LINE'] * THRESHOLD['others']
     # 日付_yをBASE_DATEへ
     THRESHOLD = THRESHOLD.rename(columns={'日付_y': 'BASE_DATE'})
-    # 上限、下限、納期遅延ラインの非稼働日を0に
-    THRESHOLD = THRESHOLD.astype({'PRODUCTION_ABILITY_MAX': int, 'PRODUCTION_ABILITY_MIN': int, 'DUE_DATE_DELAYED_LINE': int, 'others': int, })
-    THRESHOLD.loc[:,'PRODUCTION_ABILITY_MAX'] = THRESHOLD['PRODUCTION_ABILITY_MAX'] * THRESHOLD['others']
-    THRESHOLD.loc[:,'PRODUCTION_ABILITY_MIN'] = THRESHOLD['PRODUCTION_ABILITY_MIN'] * THRESHOLD['others']
-    THRESHOLD.loc[:,'DUE_DATE_DELAYED_LINE'] = THRESHOLD['DUE_DATE_DELAYED_LINE'] * THRESHOLD['others']
     THRESHOLD = THRESHOLD.loc[:,['SUBSIDIARY_CD', 'SUPPLIER_CD', 'FACILITY_CD', 'BASE_DATE', 'PRODUCTION_ABILITY_MAX', 'PRODUCTION_ABILITY_MIN', 'DUE_DATE_DELAYED_LINE']]
     return THRESHOLD
 
@@ -85,8 +86,8 @@ if __name__ == '__main__':
     nowork_day = pd.read_csv('nowork_day.csv', encoding=font, dtype='object', index_col=None)
 
     # 各現法、拠点の非稼働日をリスト化
-    sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM', '7017', '3764', '0FCN', 'SPCM']
-    calendar_name = ['CAAAA', 'GAAAA', 'NAAAA', 'DAAAA', 'JAAAA', 'KAAAA', 'QAAAA', '5AAAA', 'MAAAA', 'SAAAA', 'HAAAA', 'TAAAA', 'UAAAA', 'VAAAA', '5AAAA', '5AAAA', 'C8677', '50SPC']
+    sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM', '7017', '3764', '0FCN', '0AIO','SPCM', '0143']
+    calendar_name = ['CAAAA', 'GAAAA', 'NAAAA', 'DAAAA', 'JAAAA', 'KAAAA', 'QAAAA', '5AAAA', 'MAAAA', 'SAAAA', 'HAAAA', 'TAAAA', 'UAAAA', 'VAAAA', '5AAAA', '5AAAA', 'C8677', 'C8677', '50SPC', '5AAAA']
     calendar_dict ={}
     for i in range(0,len(sub_name)):
         noworkday_df = nowork_day[nowork_day['CALENDAR_CD'] == calendar_name[i]]
@@ -98,11 +99,11 @@ if __name__ == '__main__':
     # 日付とサプライヤコード毎に稼働日フラグをつける
     # 並列処理
     pool = Pool(multi.cpu_count() - 2)
-    list = [(d, sub_name, calendar_dict, THRESHOLD) for d in range(14, 18)]
+    list = [(d, sub_name, calendar_dict, THRESHOLD) for d in range(14, 20)]
     THRESHOLD_p = pool.map(wrapper, list)
     pool.close()
     THRESHOLD_SUM = pd.DataFrame({'SUBSIDIARY_CD': [], 'SUPPLIER_CD': [], 'FACILITY_CD': [], 'BASE_DATE':[], 'PRODUCTION_ABILITY_MAX':[], 'PRODUCTION_ABILITY_MIN':[], 'DUE_DATE_DELAYED_LINE':[]})
-    for d in range(4):
+    for d in range(6):
         THRESHOLD_SUM = THRESHOLD_SUM.append(THRESHOLD_p[d], sort=False)
 
     # 空欄を埋める
