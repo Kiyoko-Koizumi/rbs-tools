@@ -9,6 +9,7 @@
 # 現法仕入差額を計算
 # 1レコードの中にbefore/after拠点を記載
 # データ削減のため不必要な列を削除
+# RBS管理単位コードについて該当管理単位ないときは転記しないよう修正
 
 
 import csv
@@ -134,16 +135,16 @@ MNG_header = MNG_Unit.columns.values
 Output = pd.merge(Output,MNG_Unit,left_on='PRODUCT_CD', right_on='PRODUCT_CD',how='left')
 
 # 従来生産拠点のコードを先に転記
-Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='MAL','RBS_MANAGEMENT_UNIT_CD']=Output['7017']
-Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='AAL','RBS_MANAGEMENT_UNIT_CD']=Output['3764']
-Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='FAL','RBS_MANAGEMENT_UNIT_CD']=Output['0FCN']
-Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='SAL','RBS_MANAGEMENT_UNIT_CD']=Output['SPCM']
+Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='MAL' & Output['7017'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['7017']
+Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='AAL' & Output['3764'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['3764']
+Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='FAL' & Output['0FCN'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['0FCN']
+Output.loc[Output['RESULTS_MANAGEMENT_UNIT_CD']=='SAL' & Output['SPCM'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['SPCM']
 # R.B.S RECのみ従来生産拠点のコードに上書き
-Output.loc[Output['RBS_SUPPLIER_CD']=='7017','RBS_MANAGEMENT_UNIT_CD']=Output['7017']
-Output.loc[Output['RBS_SUPPLIER_CD']=='3764','RBS_MANAGEMENT_UNIT_CD']=Output['3764']
-Output.loc[Output['RBS_SUPPLIER_CD']=='0FCN','RBS_MANAGEMENT_UNIT_CD']=Output['0FCN']
-Output.loc[Output['RBS_SUPPLIER_CD']=='0NEW','RBS_MANAGEMENT_UNIT_CD']=Output['0FCN']
-Output.loc[Output['RBS_SUPPLIER_CD']=='SPCM','RBS_MANAGEMENT_UNIT_CD']=Output['SPCM']
+Output.loc[Output['RBS_SUPPLIER_CD']=='7017' & Output['7017'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['7017']
+Output.loc[Output['RBS_SUPPLIER_CD']=='3764' & Output['3764'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['3764']
+Output.loc[Output['RBS_SUPPLIER_CD']=='0FCN' & Output['0FCN'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['0FCN']
+Output.loc[Output['RBS_SUPPLIER_CD']=='0NEW' & Output['0FCN'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['0FCN']
+Output.loc[Output['RBS_SUPPLIER_CD']=='SPCM' & Output['SPCM'].notnull(),'RBS_MANAGEMENT_UNIT_CD']=Output['SPCM']
 Output.drop(['7017', '3764_ALL', '0FCN_ALL', 'SPCM_ALL', '3764', '0FCN', 'SPCM'], axis=1, inplace=True)
 
 # カラム順を元に戻す
