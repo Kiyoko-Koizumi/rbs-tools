@@ -26,193 +26,185 @@ from multiprocessing import Pool
 import multiprocessing as multi
 import datetime
 
+def getFACI_CD():
+    # SELECTボタンが押されたときの動き
+    def getitemcode():
+        root.withdraw()
+        root.quit()
+
+    # 抽出したい製造グループを指定する
+    # GUIの作成
+    # サプライヤ選択肢を作成
+    list_pg = ['7017', '3764', '0FCN', 'SPCM']
+    year_l = ['2017', '2018', '2019', '2020', '2021', '2022']
+    month_l = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+    day_l = []
+
+    for a in range(1, 32):
+        day_l.append(str(a))
+
+    # ルートフレームの作成
+    root = tk.Tk()
+    label1 = tk.Label(root, text="【サプライヤを選択】", font=("", 12), height=2)
+    label2 = tk.Label(root, text="【受注データ利用期間　開始日】", font=("", 12), height=2)
+    label3 = tk.Label(root, text="【受注データ利用期間　終了日】", font=("", 12), height=2)
+    label4 = tk.Label(root, text="【予測データ作成期間　開始日】", font=("", 12), height=2)
+    label5 = tk.Label(root, text="【予測データ作成期間　終了日】", font=("", 12), height=2)
+    label6 = tk.Label(root, text="年", font=("", 12), height=2)
+    label7 = tk.Label(root, text="月", font=("", 12), height=2)
+    label8 = tk.Label(root, text="日", font=("", 12), height=2)
+    label9 = tk.Label(root, text="年", font=("", 12), height=2)
+    label10 = tk.Label(root, text="月", font=("", 12), height=2)
+    label11 = tk.Label(root, text="日", font=("", 12), height=2)
+    label12 = tk.Label(root, text="年", font=("", 12), height=2)
+    label13 = tk.Label(root, text="月", font=("", 12), height=2)
+    label14 = tk.Label(root, text="日", font=("", 12), height=2)
+    label15 = tk.Label(root, text="年", font=("", 12), height=2)
+    label16 = tk.Label(root, text="月", font=("", 12), height=2)
+    label17 = tk.Label(root, text="日", font=("", 12), height=2)
+
+    # コンボボックスの作成(rootに配置,リストの値を編集不可(readonly)に設定)
+
+    combo_l = []
+    for c in range(13):
+        combo = ttk.Combobox(root, state='readonly', width=10)
+        combo_l.append(combo)
+
+    # リストの値を設定
+    combo_l[0]["values"] = list_pg
+    for c in range(1, 5):
+        combo_l[c]["values"] = year_l
+    for c in range(5, 9):
+        combo_l[c]["values"] = month_l
+    for c in range(9, 13):
+        combo_l[c]["values"] = day_l
+
+    # デフォルトの値を食費(index=0)に設定
+    for c in range(13):
+        combo_l[c].current(0)
+
+    # コンボボックスの配置
+    label1.grid(row=0, column=0)
+    combo_l[0].grid(row=0, column=1)
+    label2.grid(row=4, column=0)
+    combo_l[1].grid(row=4, column=1)
+    combo_l[5].grid(row=4, column=3)
+    combo_l[9].grid(row=4, column=5)
+    label6.grid(row=4, column=2)
+    label7.grid(row=4, column=4)
+    label8.grid(row=4, column=6)
+    label3.grid(row=6, column=0)
+    combo_l[2].grid(row=6, column=1)
+    combo_l[6].grid(row=6, column=3)
+    combo_l[10].grid(row=6, column=5)
+    label9.grid(row=6, column=2)
+    label10.grid(row=6, column=4)
+    label11.grid(row=6, column=6)
+    label4.grid(row=8, column=0)
+    combo_l[3].grid(row=8, column=1)
+    combo_l[7].grid(row=8, column=3)
+    combo_l[11].grid(row=8, column=5)
+    label12.grid(row=8, column=2)
+    label13.grid(row=8, column=4)
+    label14.grid(row=8, column=6)
+    label5.grid(row=10, column=0)
+    combo_l[4].grid(row=10, column=1)
+    combo_l[8].grid(row=10, column=3)
+    combo_l[12].grid(row=10, column=5)
+    label15.grid(row=10, column=2)
+    label16.grid(row=10, column=4)
+    label17.grid(row=10, column=6)
+
+    # ボタンの作成（コールバックコマンドには、コンボボックスの値を取得する処理を定義）
+    button = tk.Button(root, text="select",
+                       command=lambda: getitemcode())
+    # ボタンの配置
+    button.grid(row=11, column=6)
+
+    root.mainloop()
+    result = [combo_l[0].get(), combo_l[1].get(), combo_l[2].get(),
+              combo_l[3].get(), combo_l[4].get(), combo_l[5].get(),
+              combo_l[6].get(),
+              combo_l[7].get(), combo_l[8].get(), combo_l[9].get(),
+              combo_l[10].get(), combo_l[11].get(), combo_l[12].get()]
+    return result
+
+
+# 数量比率を算出するdefを作成
+def qtyratio(s):
+    return (s / s.sum().round(3))
+
+
+# 数量比率を算出するdefを作成
+def qtyave(s):
+    return (s / s.mean())
+
+
+# 受注予測を入れるdataframeを作成
+def Sub_func(s, so_day_list, sd_day_list, noukizokusei_list, calendar_dict, sub_name):
+    # 受注日稼働flgを作成
+    so_day_workflg = []
+    for x in range(len(so_day_list)):
+        cell = so_day_list[x]
+        if cell.strftime('%Y-%m-%d') in calendar_dict[sub_name[s]]:
+            so_day_workflg.append(0)
+        else:
+            so_day_workflg.append(1)
+    # リストからpredictionを作成
+    prediction = pd.DataFrame(
+        data={
+            '受注日': so_day_list,
+            '受注日稼働flg': so_day_workflg,
+            '出荷日': sd_day_list,
+            '納期属性': noukizokusei_list
+        },
+        columns=['受注日', '受注日稼働flg', '出荷日', '納期属性']
+    )
+    # 現法コードを作成
+    prediction.loc[:, '現法コード'] = sub_name[s]
+    # 出荷日稼働flgを作成
+    prediction.loc[:, '出荷日稼働flg'] = 1
+    return prediction
+
+
+def pre_sum2(d, Pre_S, prediction):
+    print(d)
+    SO_day = Pre_S + dt.timedelta(days=d)
+    SO_day_list = []
+    pre_qty_list = []
+    for k in range(0, 73):
+        SD_day = SO_day + dt.timedelta(days=k)
+        pre_a = prediction[prediction['受注日'] >= SO_day.strftime('%Y-%m-%d')]
+        pre_a = pre_a[pre_a['出荷日'] <= SD_day.strftime('%Y-%m-%d')]
+        pre_qty = pre_a['数量'].sum()
+        SO_day_list.append(SO_day.strftime('%Y%m%d'))
+        pre_qty_list.append(pre_qty)
+    ADD_DAYS = list(range(0, 73))
+    pre_c = pd.DataFrame(
+        data={
+            'BASE_DATE': SO_day_list,
+            'BASE_DATE_ADD_DAYS': ADD_DAYS,
+            'PREDICTION_QUANTITY': pre_qty_list
+        },
+        columns=['BASE_DATE', 'BASE_DATE_ADD_DAYS', 'PREDICTION_QUANTITY']
+    )
+    pre_c = pre_c.astype({'BASE_DATE_ADD_DAYS': int, 'PREDICTION_QUANTITY': float})
+    return pre_c
+
+
+def wrapper(args):
+    # 複数の引数を渡すためwrapperを経由
+    # 現法毎に受注予測データを作成
+    return Sub_func(*args)
+
+
+def wrapper3(args):
+    # 複数の引数を渡すためwrapperを経由
+    # 現法毎に受注予測データを作成
+    return pre_sum2(*args)
+
+
 def Orders_prediction():
-    def getFACI_CD():
-        # SELECTボタンが押されたときの動き
-        def getitemcode(item, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12):
-            global pg_name, Tgt_S, Tgt_E, Pre_S, Pre_E
-            pg_name = item
-            check_list = [item5, item6, item7, item8, item9, item10, item11, item12]
-            for c in range(len(check_list)):
-                if len(check_list[c]) == 1:
-                    check_list[c] = '0' + check_list[c]
-
-            Tgt_S = item1 + check_list[0] + check_list[4]
-            Tgt_E = item2 + check_list[1] + check_list[5]
-            Pre_S = item3 + check_list[2] + check_list[6]
-            Pre_E = item4 + check_list[3] + check_list[7]
-            root.destroy()
-
-        # 抽出したい製造グループを指定する
-        # GUIの作成
-        # サプライヤ選択肢を作成
-        list_pg = ['7017', '3764', '0FCN', 'SPCM']
-        year_l = ['2017', '2018', '2019', '2020', '2021', '2022']
-        month_l = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
-        day_l = []
-
-        for a in range(1, 32):
-            day_l.append(str(a))
-
-        # ルートフレームの作成
-        root = tk.Tk()
-        label1 = tk.Label(root, text="【サプライヤを選択】", font=("", 12), height=2)
-        label2 = tk.Label(root, text="【受注データ利用期間　開始日】", font=("", 12), height=2)
-        label3 = tk.Label(root, text="【受注データ利用期間　終了日】", font=("", 12), height=2)
-        label4 = tk.Label(root, text="【予測データ作成期間　開始日】", font=("", 12), height=2)
-        label5 = tk.Label(root, text="【予測データ作成期間　終了日】", font=("", 12), height=2)
-        label6 = tk.Label(root, text="年", font=("", 12), height=2)
-        label7 = tk.Label(root, text="月", font=("", 12), height=2)
-        label8 = tk.Label(root, text="日", font=("", 12), height=2)
-        label9 = tk.Label(root, text="年", font=("", 12), height=2)
-        label10 = tk.Label(root, text="月", font=("", 12), height=2)
-        label11 = tk.Label(root, text="日", font=("", 12), height=2)
-        label12 = tk.Label(root, text="年", font=("", 12), height=2)
-        label13 = tk.Label(root, text="月", font=("", 12), height=2)
-        label14 = tk.Label(root, text="日", font=("", 12), height=2)
-        label15 = tk.Label(root, text="年", font=("", 12), height=2)
-        label16 = tk.Label(root, text="月", font=("", 12), height=2)
-        label17 = tk.Label(root, text="日", font=("", 12), height=2)
-
-        # コンボボックスの作成(rootに配置,リストの値を編集不可(readonly)に設定)
-
-        combo_l = []
-        for c in range(13):
-            combo = ttk.Combobox(root, state='readonly', width=10)
-            combo_l.append(combo)
-
-        # リストの値を設定
-        combo_l[0]["values"] = list_pg
-        for c in range(1, 5):
-            combo_l[c]["values"] = year_l
-        for c in range(5, 9):
-            combo_l[c]["values"] = month_l
-        for c in range(9, 13):
-            combo_l[c]["values"] = day_l
-
-        # デフォルトの値を食費(index=0)に設定
-        for c in range(13):
-            combo_l[c].current(0)
-
-        # コンボボックスの配置
-        label1.grid(row=0, column=0)
-        combo_l[0].grid(row=0, column=1)
-        label2.grid(row=4, column=0)
-        combo_l[1].grid(row=4, column=1)
-        combo_l[5].grid(row=4, column=3)
-        combo_l[9].grid(row=4, column=5)
-        label6.grid(row=4, column=2)
-        label7.grid(row=4, column=4)
-        label8.grid(row=4, column=6)
-        label3.grid(row=6, column=0)
-        combo_l[2].grid(row=6, column=1)
-        combo_l[6].grid(row=6, column=3)
-        combo_l[10].grid(row=6, column=5)
-        label9.grid(row=6, column=2)
-        label10.grid(row=6, column=4)
-        label11.grid(row=6, column=6)
-        label4.grid(row=8, column=0)
-        combo_l[3].grid(row=8, column=1)
-        combo_l[7].grid(row=8, column=3)
-        combo_l[11].grid(row=8, column=5)
-        label12.grid(row=8, column=2)
-        label13.grid(row=8, column=4)
-        label14.grid(row=8, column=6)
-        label5.grid(row=10, column=0)
-        combo_l[4].grid(row=10, column=1)
-        combo_l[8].grid(row=10, column=3)
-        combo_l[12].grid(row=10, column=5)
-        label15.grid(row=10, column=2)
-        label16.grid(row=10, column=4)
-        label17.grid(row=10, column=6)
-
-        # ボタンの作成（コールバックコマンドには、コンボボックスの値を取得する処理を定義）
-        button = tk.Button(root, text="select",
-                           command=lambda: getitemcode(combo_l[0].get(), combo_l[1].get(), combo_l[2].get(),
-                                                       combo_l[3].get(), combo_l[4].get(), combo_l[5].get(),
-                                                       combo_l[6].get(),
-                                                       combo_l[7].get(), combo_l[8].get(), combo_l[9].get(),
-                                                       combo_l[10].get(), combo_l[11].get(), combo_l[12].get()))
-        # ボタンの配置
-        button.grid(row=11, column=6)
-
-        root.mainloop()
-
-    # 数量比率を算出するdefを作成
-    def qtyratio(s):
-        return (s / s.sum().round(3))
-
-    # 数量比率を算出するdefを作成
-    def qtyave(s):
-        return (s / s.mean())
-
-    # 受注予測を入れるdataframeを作成
-    def Sub_func(s, so_day_list, sd_day_list, noukizokusei_list, calendar_dict, sub_name):
-        # 受注日稼働flgを作成
-        so_day_workflg = []
-        for x in range(len(so_day_list)):
-            cell = so_day_list[x]
-            if cell.strftime('%Y-%m-%d') in calendar_dict[sub_name[s]]:
-                so_day_workflg.append(0)
-            else:
-                so_day_workflg.append(1)
-        # リストからpredictionを作成
-        prediction = pd.DataFrame(
-            data={
-                '受注日': so_day_list,
-                '受注日稼働flg': so_day_workflg,
-                '出荷日': sd_day_list,
-                '納期属性': noukizokusei_list
-            },
-            columns=['受注日', '受注日稼働flg', '出荷日', '納期属性']
-        )
-        # 現法コードを作成
-        prediction.loc[:, '現法コード'] = sub_name[s]
-        # 出荷日稼働flgを作成
-        prediction.loc[:, '出荷日稼働flg'] = 1
-        return prediction
-
-    def pre_sum2(d, Pre_S, prediction):
-        print(d)
-        SO_day = Pre_S + dt.timedelta(days=d)
-        SO_day_list = []
-        pre_qty_list = []
-        for k in range(0, 73):
-            SD_day = SO_day + dt.timedelta(days=k)
-            pre_a = prediction[prediction['受注日'] >= SO_day.strftime('%Y-%m-%d')]
-            pre_a = pre_a[pre_a['出荷日'] <= SD_day.strftime('%Y-%m-%d')]
-            pre_qty = pre_a['数量'].sum()
-            SO_day_list.append(SO_day.strftime('%Y%m%d'))
-            pre_qty_list.append(pre_qty)
-        ADD_DAYS = list(range(0, 73))
-        pre_c = pd.DataFrame(
-            data={
-                'BASE_DATE': SO_day_list,
-                'BASE_DATE_ADD_DAYS': ADD_DAYS,
-                'PREDICTION_QUANTITY': pre_qty_list
-            },
-            columns=['BASE_DATE', 'BASE_DATE_ADD_DAYS', 'PREDICTION_QUANTITY']
-        )
-        pre_c = pre_c.astype({'BASE_DATE_ADD_DAYS': int, 'PREDICTION_QUANTITY': float})
-        return pre_c
-
-    def wrapper(args):
-        # 複数の引数を渡すためwrapperを経由
-        # 現法毎に受注予測データを作成
-        return Sub_func(*args)
-
-    def wrapper3(args):
-        # 複数の引数を渡すためwrapperを経由
-        # 現法毎に受注予測データを作成
-        return pre_sum2(*args)
-
-    # 変数を定義
-    pre_dict = {}
-    pg_name = ()
-    Tgt_S = ()
-    Tgt_E = ()
-    Pre_S = ()
-    Pre_E = ()
 
     # from tqdm import tqdm
     csv.field_size_limit(1000000000)
@@ -222,18 +214,16 @@ def Orders_prediction():
 
     # スクリプトのあるディレクトリの絶対パスを取得
     script_pass = os.path.dirname(os.path.abspath(__name__))
-    script_pass = script_pass + '/Orders_prediction'
-    os.chdir(script_pass)
-
-    # 選択期間のカレンダを読み込む
-    with open('YYYYMMDD.tsv', 'r', encoding=font) as f:
-        calendar_list = f.read().split(',')
+    if __name__ == '__main__':
+        local_pass = script_pass + '/'
+    else:
+        local_pass = script_pass + '/Orders_prediction/'
 
     # ファイル選択ダイアログの表示
     root = tk.Tk()
     root.withdraw()
     fTyp = [("","*")]
-    iDir = os.path.abspath(os.path.dirname(__file__))
+    iDir = local_pass
 
     # 受注実績データの取得
     # ここの1行を変更 askopenfilename → askopenfilenames
@@ -244,16 +234,26 @@ def Orders_prediction():
         list_f = list(file)
 
         # リストボックスの作成を実行
-        getFACI_CD()
+        result = getFACI_CD()
+
+        pg_name = result[0]
+        check_list = [result[5], result[6], result[7], result[8], result[9], result[10], result[11], result[12]]
+        for c in range(len(check_list)):
+            if len(check_list[c]) == 1:
+                check_list[c] = '0' + check_list[c]
+
+        Tgt_S = result[1] + check_list[0] + check_list[4]
+        Tgt_E = result[2] + check_list[1] + check_list[5]
+        Pre_S = result[3] + check_list[2] + check_list[6]
+        Pre_E = result[4] + check_list[3] + check_list[7]
 
         # 1つ目のファイルを開く
         f_name = os.path.basename(list_f[0])
         f_pass = os.path.dirname(list_f[0])
-        os.chdir(f_pass)
 
         # 必要な列のみ読み込む
-        print(f_name)
-        order = pd.read_csv(f_name, sep='\t', encoding=font, dtype=object, engine='python', error_bad_lines=False,
+        print(f_pass + '/' + f_name)
+        order = pd.read_csv(f_pass + '/' + f_name, sep='\t', encoding=font, dtype=object, engine='python', error_bad_lines=False,
                             usecols=['番号', '現法コード', 'グローバル番号', '受注日・見積回答日', '受注時間・見積回答時間', 'JST変換受注日・JST変換見積回答日',
                                      'JST変換受注時間・JST変換見積回答時間', '見積有効日', '見積有効時間', 'JST変換見積有効日', 'JST変換見積有効時間',
                                      'アンフィット種別', '得意先コード', '直送先コード', 'ＭＣコード', 'インナーコード', '商品コード', '実績現法コード', '実績仕入先コード',
@@ -264,7 +264,7 @@ def Orders_prediction():
         for r in range(1, len(list_f)):
             f_name = os.path.basename(list_f[r])
             print(f_name)
-            order_add = pd.read_csv(f_name, sep='\t', encoding=font, dtype=object, engine='python',
+            order_add = pd.read_csv(f_pass + '/' + f_name, sep='\t', encoding=font, dtype=object, engine='python',
                                     error_bad_lines=False,
                                     usecols=['番号', '現法コード', 'グローバル番号', '受注日・見積回答日', '受注時間・見積回答時間',
                                              'JST変換受注日・JST変換見積回答日', 'JST変換受注時間・JST変換見積回答時間', '見積有効日', '見積有効時間',
@@ -279,8 +279,7 @@ def Orders_prediction():
         print(dt_now)
 
         # 非稼働日データを読み込む
-        os.chdir(script_pass)
-        nowork_day = pd.read_csv('nowork_day.csv', encoding=font, dtype='object', index_col=None)
+        nowork_day = pd.read_csv(local_pass + 'nowork_day.csv', encoding=font, dtype='object', index_col=None)
 
         # 各現法、拠点の非稼働日をリスト化
         sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM',
@@ -379,7 +378,7 @@ def Orders_prediction():
         # FC = order_subtotal
 
         # FCデータ取り込み
-        FC = pd.read_csv('FC.csv', encoding=font, dtype='object', index_col=None)
+        FC = pd.read_csv(local_pass + 'FC.csv', encoding=font, dtype='object', index_col=None)
         # header名の変更
         FC = FC.rename(columns={'SUBSIDIARY_CD': '現法コード'})
         # SUPPLIER_CDの指定
@@ -428,8 +427,7 @@ def Orders_prediction():
         order_week1 = order_week1.rename(columns={'数量': 'week_ratio'})
 
         # 現法、曜日、納期属性の箱を用意
-        os.chdir(script_pass)
-        base_sh = pd.read_csv('base_sh.csv', encoding=font, index_col=None, dtype={'数量': int, '納期属性': int})
+        base_sh = pd.read_csv(local_pass + 'base_sh.csv', encoding=font, index_col=None, dtype={'数量': int, '納期属性': int})
 
         # 現法、曜日、納期属性毎の数量を合計
         order_A = order[order['アンフィット種別'] == '0']  # 大口を除く
@@ -532,7 +530,7 @@ def Orders_prediction():
 
         # 受注日と出荷日毎のデータを出力
         f_name = pg_name + '_prediction_row.tsv'
-        prediction.to_csv(f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n', index=False)
+        prediction.to_csv(local_pass + f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n', index=False)
 
         # 受注日*出荷日毎の数量を合計 日付の型をあとで修正
         prediction = prediction.groupby(['受注日', '出荷日'], as_index=False)['数量'].sum()
@@ -599,7 +597,7 @@ def Orders_prediction():
         prediction = prediction.round({'PREDICTION_QUANTITY': 3})
 
         f_name = pg_name + '_prediction.tsv'
-        prediction.to_csv(f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n', index=False)
+        prediction.to_csv(local_pass + f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n', index=False)
 
         # 時間を表示
         dt_now = datetime.datetime.now()
