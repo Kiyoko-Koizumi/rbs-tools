@@ -603,9 +603,9 @@ def Orders_prediction():
             dt_now = datetime.datetime.now()
             print(dt_now)
 
-        print('受注予測作成 Finish!')
-    else:
-        print('受注予測作成 Finish 該当する実績データがありません！')
+            print('受注予測作成 Finish!')
+        else:
+            print('受注予測作成 Finish 該当する実績データがありません！')
 
 if __name__ == '__main__':
     Orders_prediction()
