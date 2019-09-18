@@ -35,7 +35,7 @@ def getFACI_CD():
     # 抽出したい製造グループを指定する
     # GUIの作成
     # サプライヤ選択肢を作成
-    list_pg = ['7017', '3764', '0FCN', 'SPCM']
+    list_pg = ['0143', '7017', '3764', '0FCN', '0AIO', 'SPCM']
     year_l = ['2017', '2018', '2019', '2020', '2021', '2022']
     month_l = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     day_l = []
@@ -283,9 +283,9 @@ def Orders_prediction():
 
         # 各現法、拠点の非稼働日をリスト化
         sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM',
-                    '7017', '3764', '0FCN', 'SPCM']
+                    '0143', '7017', '3764', '0FCN', '0AIO', 'SPCM']
         calendar_name = ['CAAAA', 'GAAAA', 'NAAAA', 'DAAAA', 'JAAAA', 'KAAAA', 'QAAAA', '5AAAA', 'MAAAA', 'SAAAA',
-                         'HAAAA', 'TAAAA', 'UAAAA', 'VAAAA', '5AAAA', '5AAAA', 'C8677', '50SPC']
+                         'HAAAA', 'TAAAA', 'UAAAA', 'VAAAA', '5AAAA', '5AAAA', '5AAAA', 'C8677', 'C8677', '50SPC']
         calendar_dict = {}
         for i in range(0, len(sub_name)):
             noworkday_df = nowork_day[nowork_day['CALENDAR_CD'] == calendar_name[i]]
