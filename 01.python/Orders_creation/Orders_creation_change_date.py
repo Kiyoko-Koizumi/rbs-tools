@@ -177,7 +177,7 @@ def wrapper2(args):
 
 
 def random_order(S, order, sub_name, calendar_dict, FC):
-    SUPPLIER_CD = ['3764', '7017', '0FCN', 'SPCM']
+    SUPPLIER_CD = ['0143', '3764', '7017', '0FCN', '0AIO', 'SPCM']
     year = '2019'
     # RBS_受注現法仕入先コードにするか実績仕入先コードにするか要検討  pre_input仕様では実績仕入先コード
     order = order[order['実績仕入先コード'] == SUPPLIER_CD[S]]
@@ -215,7 +215,7 @@ def random_order(S, order, sub_name, calendar_dict, FC):
 def Orders_creation_change_date():
 
     sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM',
-                '7017', '3764', '0FCN', 'SPCM']
+                '0143', '3764', '7017', '0FCN', '0AIO', 'SPCM']
 
     csv.field_size_limit(1000000000)
 
@@ -287,7 +287,7 @@ def Orders_creation_change_date():
 
         # 拠点毎にforで繰り返す
         mk_order = pd.DataFrame(columns=header)
-        for S in range(0, 4):
+        for S in range(0, 6):
             df = random_order(S, order, sub_name, calendar_dict, FC)
             # データをmk_orderに追加する
             mk_order = mk_order.append(df, sort=False)

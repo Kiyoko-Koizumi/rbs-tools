@@ -50,7 +50,7 @@ def ramdom_order_sub(S, year, month, SUPPLIER_CD, order_count, FC, header):
     Pre_S = dt.datetime.strptime(Pre_S, '%Y-%m-%d')
     Pre_E = Pre_S + relativedelta(months=1) - dt.timedelta(days=1)
     sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM',
-                '7017', '3764', '0FCN', 'SPCM']
+                '0143', '3764', '7017', '0FCN', '0AIO', 'SPCM']
     df_sub_sum = pd.DataFrame(columns=header)
 
     # 現法毎に実施する
@@ -90,7 +90,7 @@ def wrapper2(args):
 
 
 def random_order(S, order_count, FC):
-    SUPPLIER_CD = ['3764', '7017', '0FCN', 'SPCM']
+    SUPPLIER_CD = ['0143', '3764', '7017', '0FCN', '0AIO', 'SPCM']
     # RBS_受注現法仕入先コードにするか実績仕入先コードにするか要検討
     order_count = order_count[order_count['RBS_受注現法仕入先コード'] == SUPPLIER_CD[S]]
     # データを入れるdfを定義
@@ -98,7 +98,7 @@ def random_order(S, order_count, FC):
     mk_order = pd.DataFrame(columns=header)
 
     # プロセスを 月の数だけつくり月毎にプロセスを分ける
-    year = '2019'
+    year = '2018'
     pool = Pool(multi.cpu_count() - 2)
     list2 = [(S, year, str(m + 3), SUPPLIER_CD, order_count, FC, header) for m in range(10)]
     mk_order_m = pool.map(wrapper2, list2)
@@ -106,7 +106,7 @@ def random_order(S, order_count, FC):
     for i in range(10):
         mk_order = mk_order.append(mk_order_m[i], sort=False)
 
-    year = '2020'
+    year = '2019'
     pool = Pool(multi.cpu_count() - 2)
     list2 = [(S, year, str(m + 1), SUPPLIER_CD, order_count, FC, header) for m in range(3)]
     mk_order_m = pool.map(wrapper2, list2)
@@ -158,7 +158,7 @@ def Orders_creation_no_change_date():
 
         # 拠点毎にforで繰り返す(2019)
         mk_order_sum = pd.DataFrame(columns=header)
-        for S in range(0, 4):
+        for S in range(0, 6):
             df = random_order(S, order_count, FC)
             mk_order_sum = mk_order_sum.append(df, sort=False)
 

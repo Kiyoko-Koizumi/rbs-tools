@@ -538,9 +538,11 @@ def Orders_prediction():
 
         q, mod = divmod(((Pre_E - Pre_S).days + 1), 20)
         FACILITY_DICT = {}
+        FACILITY_DICT['0143'] = ['MJP', '0143', 'AIO']
         FACILITY_DICT['7017'] = ['MJP', '7017', 'MAL']
         FACILITY_DICT['3764'] = ['MJP', '3764', 'AAL']
         FACILITY_DICT['0FCN'] = ['CHN', '0FCN', 'FAL']
+        FACILITY_DICT['0AIO'] = ['CHN', '0AIO', 'F2A']
         FACILITY_DICT['SPCM'] = ['VNM', 'SPCM', 'SAL']
 
         FACILITY_L = FACILITY_DICT[pg_name]
