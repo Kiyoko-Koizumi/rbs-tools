@@ -469,16 +469,16 @@ def Orders_prediction():
             noukizokusei = list(range(73))
             noukizokusei_list = []
             for nouki in range(len(day_list)):
+                noworkday_count = 0
                 for n in range(73):
                     so_day_list.append(day_list[nouki])
-                noukizokusei_list.extend(noukizokusei)
-            # 受注日と納期属性から出荷日を作成
-            for nouki_b in range(len(so_day_list)):
-                sd_day = so_day_list[nouki_b] + datetime.timedelta(days=noukizokusei_list[nouki_b])
-                # 出荷日稼働flgを作成し非稼働日なら+1する
-                while sd_day.strftime('%Y-%m-%d') in calendar_dict[pg_name]:
-                    sd_day = sd_day + dt.timedelta(days=1)
-                sd_day_list.append(sd_day)
+                    noukizokusei_list.append(n)
+                    sd_day = day_list[nouki] + datetime.timedelta(days=(n + noworkday_count))
+                    # 出荷日稼働flgを作成し非稼働日なら+1する
+                    while sd_day.strftime('%Y-%m-%d') in calendar_dict[pg_name]:
+                        sd_day = sd_day + dt.timedelta(days=1)
+                        noworkday_count = noworkday_count + 1
+                    sd_day_list.append(sd_day)
 
             # マルチプロセス処理の結果を入れるdfを作成
             prediction_sum = pd.DataFrame({'現法コード': [], '受注日': [], '受注日稼働flg': [], '出荷日': [], '出荷日稼働flg': [], '納期属性': []})
