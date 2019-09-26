@@ -34,13 +34,13 @@ def select_func():
     button3 = tk.Button(root, text="Produc_tmaster to SPC",
                        command=lambda: func1(), width=30)
     button4 = tk.Button(root, text="Unit_price_master to SPC",
-                       command=lambda: fill_in_overlist_of_Unitprice.fill_in_overlist(), width=30)
+                       command=lambda: func1(), width=30)
     button5 = tk.Button(root, text="Check_master to SPC",
                        command=lambda: func1(), width=30)
     button14 = tk.Button(root, text="Over_list",
                        command=lambda: func1(), width=15)
     button15 = tk.Button(root, text="Error_list",
-                       command=lambda: func1(), width=15)
+                       command=lambda: fill_in_overlist_of_Unitprice.fill_in_overlist(), width=15)
     button6 = tk.Button(root, text="SPC 仕入値変更",
                        command=lambda: func1(), width=30)
     button7 = tk.Button(root, text="商品別仕入先マスタ",

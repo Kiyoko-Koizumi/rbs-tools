@@ -11,7 +11,7 @@ import tkinter.ttk as ttk
 from Orders_creation import Orders_creation_change_date
 from Orders_creation import Orders_creation_no_change_date
 from Orders_prediction import Orders_prediction
-from Production_threshhold import PRODUCTION_THRESHOLD
+from Production_threshold import PRODUCTION_THRESHOLD
 
 csv.field_size_limit(1000000000)
 
