@@ -2,6 +2,8 @@
 import pandas as pd
 import numpy as np
 import Header
+import datetime
+print(datetime.datetime.now())
 
 path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/temp_data/'
 
@@ -122,7 +124,7 @@ dfs['Express C Days TS'] = df['Express C Days TS_z']  # ストークCカタロ�
 dfs['Print Weight Unit'] = df['Print Weight Unit_z']  # 商品重量単位
 dfs['Days to Ship of ExpZ'] = df['Days to Ship of ExpZ_z']  # 早割カタログ納期
 dfs['Currency(Purchase of BO)'] = df['Currency(Purchase of BO)_z']  # 大口仕入通貨コード
-dfs['Purchase Mode of BO'] = df['Purchase Mode of BO_z']  # 大口調達パターン
+dfs['Purchase Mode of BO'] = ''  # 大口調達パターン　大口仕入先設定がNullなので大口調達パターンもNull
 dfs['Shipment Stop Div'] = df['Shipment Stop Div_z']  # 出荷停止区分
 dfs['Express A Direct Ship Flg'] = df['Express A Direct Ship Flg_z']  # ストークA直送フラグ
 dfs['Express B Direct Ship Flg'] = df['Express B Direct Ship Flg_z']  # ストークB直送フラグ
@@ -151,7 +153,7 @@ dfs['PO as STOCK'] = df['PO as STOCK_z']  # 事前補充発注フラグ
 dfs['Remarks'] = df['Remarks_z']  # 注釈
 dfs['Hazardous Product'] = df['Hazardous Product_z']  # 危険品フラグ
 dfs['GTI Apply'] = '0'  # GTI対象フラグ
-dfs['Message Mst to Imp Sub'] = df['Message Mst to Imp Sub_z']  # 現法間受注メッセージフラグ
+dfs['Message Mst to Imp Sub'] = df['Message Mst to Imp Sub_s']
 dfs['Print Qty Unit'] = df['Print Qty Unit_z']  # 数量単位
 dfs['QC Product'] = df['QC Product_z']  # QCフラグ
 dfs['Partial Delivery Threshold'] = '0'  # 分納閾値
@@ -166,86 +168,100 @@ dfs['位置'] = df['位置']    # 【提出用】ベトナム重量ロジック�
 dfs['Weight2'] = df['Weight2']  # 【提出用】ベトナム重量ロジック★最終アップリスト_CC
 dfs['DaysTS'] = df['DaysTS']    # 輸送日数
 
-# 商品重量・重量式区分・重量式設定・USA処理・TI/非TI処理
-df = pd.DataFrame()
-df1 = pd.DataFrame()
-n = len(dfs)
-for i in range(0, n):
-    df = dfs.loc[[i]]
-    df['Production LT'] = df['Production LT'].astype(int)
-    df['DaysTS'] = df['DaysTS'].astype(int)
-    df['Process Mode'] = '2'  # 処理区分　※[dfs]で空白なので再度設定したら入った
-    df['Master ID'] = '01'  # 登録区分　※[dfs]で空白なので再度設定したら入った
+# 在庫品の場合、直送切替時刻・当日受注締時刻=Null
+dfs.loc[dfs['Stock / MTO'] == '0', 'Cutoff Time for Direct'] = ''
+dfs.loc[dfs['Stock / MTO'] == '0', 'Cutoff Time for 1day MTO'] = ''
 
-    # 商品重量・重量式区分・重量式設定
-    if np.array(df['Stock / MTO']) == '0' and np.array(df['位置']) == 'x':
-        df['Weight'] = np.array(df['Weight2'])
-    elif (np.array(df['Stock / MTO']) == '0' and np.array(df['Weight_y']) > '0') or np.array(df['Stock / MTO']) == '1':
-        df['Weight'] = np.array(df['Weight_y'])
-    else:
-        df['Weight'] = np.array(dfs['Weight Calc_y'])  # ちょっと怪しい、、＆この条件は？
+# 受注メッセージコードがNullの時、現法間受注メッセージフラグもNull err_8追加
+dfs.loc[dfs['Ordering Message Code'].isnull(), 'Message Mst to Imp Sub'] = ''
+dfs['err_8'] = ''
+dfs['err_8_C'] = ''
+dfs.loc[(dfs['Ordering Message Code'].isnull()) & (df['Ordering Message Code_z'].notnull()), 'err_8'] = '1'
+dfs.loc[(dfs['Ordering Message Code'].isnull()) & (df['Ordering Message Code_z'].notnull()), 'err_8_C'] = df['Ordering Message Code_z']
 
-    # TI・非TI
-    if np.array(df['TI対象_z']) == '1':
-        df['Production LT'] = 1 # 製作日数
-        df['Days to Ship on Catalog'] = 1 + df['DaysTS']  # カタログ納期
-        df['Express A Calc Type for Sales'] = '0'  # ストークA適用フラグ
-        df['Express A Sales Pc/Unit'] = 0  # ストークA売単価
-        df['Express A Calc Type for Purchase'] = '0'  # ストークA仕入計算方法
-        df['Express A Purchase Pc/Unit'] = 0  # ストークA仕入単価
-        df['Express A Production LT'] = 0  # ストークA製作日数
-        df['Special Express A Calc Type for Sales'] = '0'  # ストークA早割適用フラグ
-        df['Special Express A Sales Pc/Unit'] = 0  # ストークA早割売単価
-        df['Plant Express A Purchase Calc'] = '0'  # ストークA同梱仕入計算方法
-        df['Plant Express A Purchase Pc/Unit'] = 0  # ストークA同梱仕入単価
-        df['Express B Calc Type for Sales'] = '0'  # ストークB適用フラグ
-        df['Express B Sales Pc/Unit'] = 0  # ストークB売単価
-        df['Express B Purchase Pc/Unit'] = 0  # ストークB仕入単価
-        df['Express B Production LT'] = 0  # ストークB製作日数
-        df['Express C Calc Type for Sales'] = '0'  # ストークC適用フラグ
-        df['Express C Sales Pc/Unit'] = 0  # ストークC売単価
-        df['Express C Purchase Pc/Unit'] = 0  # ストークC仕入単価
-        df['Express C Production LT'] = 0  # ストークC製作日数
 
-    if np.array(df['TI対象_z']) != '1':
-        if np.array(df['Express A Sales Pc/Unit']) == '0':  # ストークA売単価=0
-            df['Express A Calc Type for Sales'] = '0'  # ストークA適用フラグ
-            df['Express A Calc Type for Purchase'] = '0'  # ストークA仕入計算方法
-            df['Express A Purchase Pc/Unit'] = 0  # ストークA仕入単価
-            df['Express A Production LT'] = 0  # ストークA製作日数
+# 商品重量
+dfs.loc[(dfs['Stock / MTO'] == '0') & (dfs['位置'] == 'x'), 'Weight'] = dfs['Weight2']
+dfs.loc[(dfs['位置'] != 'x') & (dfs['Weight_y'] > '0'), 'Weight'] = dfs['Weight_y']
 
-        if np.array(df['Special Express A Sales Pc/Unit']) == '0':  # ストークA早割売単価
-            df['Special Express A Calc Type for Sales'] = '0'  # ストークA早割適用フラグ
-            df['Plant Express A Purchase Calc'] = '0'  # ストークA同梱仕入計算方法
-            df['Plant Express A Purchase Pc/Unit'] = 0  # ストークA同梱仕入単価
+# USA処理　商品納入先・納品書納入先区分
+dfs.loc[dfs['Subsidiary Code'] == 'USA', 'Product Delivery'] = 'C'
+dfs.loc[dfs['Subsidiary Code'] == 'USA', 'Packing List Delivery'] = 'C'
 
-        if np.array(df['Express B Sales Pc/Unit']) == '0':  # ストークB早割売単価
-            df['Express B Calc Type for Sales'] = '0'  # ストークB適用フラグ
-            df['Express B Purchase Pc/Unit'] = 0  # ストークB仕入単価
-            df['Express B Production LT'] = 0  # ストークB製作日数
+# TI処理
+ti = pd.DataFrame()
+ti = ti.append(dfs.query('TI対象_z == "1"'))
+ti['Production LT'] = ti['Production LT'].astype(int)
+ti['DaysTS'] = ti['DaysTS'].astype(int)
 
-        if np.array(df['Express C Sales Pc/Unit']) == '0':  # ストークC早割売単価
-            df['Express C Calc Type for Sales'] = '0'  # ストークC適用フラグ
-            df['Express C Purchase Pc/Unit'] = 0  # ストークC仕入単価
-            df['Express C Production LT'] = 0  # ストークC製作日数
+ti['Production LT'] = 1  # 製作日数
+ti['Days to Ship on Catalog'] = 1 + ti['DaysTS']  # カタログ納期
+ti['Express A Calc Type for Sales'] = '0'  # ストークA適用フラグ
+ti['Express A Sales Pc/Unit'] = 0  # ストークA売単価
+ti['Express A Calc Type for Purchase'] = '0'  # ストークA仕入計算方法
+ti['Express A Purchase Pc/Unit'] = 0  # ストークA仕入単価
+ti['Express A Production LT'] = 0  # ストークA製作日数
+ti['Special Express A Calc Type for Sales'] = '0'  # ストークA早割適用フラグ
+ti['Special Express A Sales Pc/Unit'] = 0  # ストークA早割売単価
+ti['Plant Express A Purchase Calc'] = '0'  # ストークA同梱仕入計算方法
+ti['Plant Express A Purchase Pc/Unit'] = 0  # ストークA同梱仕入単価
+ti['Express B Calc Type for Sales'] = '0'  # ストークB適用フラグ
+ti['Express B Sales Pc/Unit'] = 0  # ストークB売単価
+ti['Express B Purchase Pc/Unit'] = 0  # ストークB仕入単価
+ti['Express B Production LT'] = 0  # ストークB製作日数
+ti['Express C Calc Type for Sales'] = '0'  # ストークC適用フラグ
+ti['Express C Sales Pc/Unit'] = 0  # ストークC売単価
+ti['Express C Purchase Pc/Unit'] = 0  # ストークC仕入単価
+ti['Express C Production LT'] = 0  # ストークC製作日数
 
-    # USA処理　カタログ納期・商品納入先・商品納入先区分　発注納期
-    if np.array(df['Subsidiary Code']) == 'USA':
-        df['Product Delivery'] = 'C'    # 商品納入先
-        df['Packing List Delivery'] = 'C'   # 納品書納入先区分
-        if np.array(df['TI対象_z']) == '1':    # TI
-            df['Production LT'] = 2     # 製作日数
-            df['Days to Ship on Catalog'] = 2 + df['DaysTS']
-        elif np.array(df['TI対象_z']) != '1':    # TI
-            df['Production LT'] = df['Production LT'] + 1  # 製作日数=製作日数+1
-            df['Days to Ship on Catalog'] = df['Production LT'] + df['DaysTS']
-        if np.array(df['Stock / MTO']) == '0' and np.array(df['Production LT for STOCK']) == '1' and np.array(df['TI対象_z']) == '1':    # TI
-            df['Production LT for STOCK'] = 2   # 発注納期
-        elif np.array(df['Stock / MTO']) == '0' and np.array(df['Production LT for STOCK']) == '1' and np.array(df['TI対象_z']) != '1':  # 非TI
-            df['Production LT for STOCK'] = df['Production LT'] + 1 # 発注納期=製作日数+1
+# USA TI処理
+ti.loc[ti['Subsidiary Code'] == 'USA', 'Production LT'] = 2 + ti['DaysTS']
+ti.loc[(ti['Stock / MTO'] == '0') & (ti['Production LT for STOCK'] == '1'), 'Production LT for STOCK'] = 2
 
-    df1 = df1.append(df, sort=False)
-df1.drop(columns=['TI対象_z', 'Weight_y', 'Weight Calc Mode_y', 'Weight Calc_y', '位置', 'Weight2', 'DaysTS'], inplace=True)    #不要な列を削除
-df1.to_csv(path + 'Product.txt', sep='\t', encoding='utf_16', index=False)  # Zetta_Product.txt　ALL出力
+# 非TI処理
+tin = pd.DataFrame()
+tin = tin.append(dfs.query('TI対象_z != "1"'))
+tin['Production LT'] = tin['Production LT'].astype(int)
+tin['DaysTS'] = tin['DaysTS'].astype(int)
 
+# ストークA売単価=0
+tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Calc Type for Sales'] = '0' # ストークA適用フラグ
+tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Calc Type for Purchase'] = '0'  # ストークA仕入計算方法
+tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Purchase Pc/Unit'] = 0    # ストークA仕入単価
+tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Production LT'] = 0   # ストークA製作日数
+
+# ストークA早割売単価=0
+tin.loc[tin['Special Express A Sales Pc/Unit'] == '0', 'Special Express A Calc Type for Sales'] = '0' # ストークA早割適用フラグ
+tin.loc[tin['Special Express A Sales Pc/Unit'] == '0', 'Plant Express A Purchase Calc'] = '0'  # ストークA同梱仕入計算方法
+tin.loc[tin['Special Express A Sales Pc/Unit'] == '0', 'Plant Express A Purchase Pc/Unit'] = 0    # ストークA同梱仕入単価
+
+# ストークB売単価=0
+tin.loc[tin['Express B Sales Pc/Unit'] == '0', 'Express B Calc Type for Sales'] = '0' # ストークB適用フラグ
+tin.loc[tin['Express B Sales Pc/Unit'] == '0', 'Express B Purchase Calc'] = '0'  # ストークB同梱仕入計算方法
+tin.loc[tin['Express B Sales Pc/Unit'] == '0', 'Express B Purchase Pc/Unit'] = 0    # ストークB同梱仕入単価
+
+# ストークC売単価=0
+tin.loc[tin['Express C Sales Pc/Unit'] == '0', 'Express C Calc Type for Sales'] = '0' # ストークC適用フラグ
+tin.loc[tin['Express C Sales Pc/Unit'] == '0', 'Express C Purchase Calc'] = '0'  # ストークC同梱仕入計算方法
+tin.loc[tin['Express C Sales Pc/Unit'] == '0', 'Express C Purchase Pc/Unit'] = 0    # ストークC同梱仕入単価
+
+# USA　非TI処理
+tin.loc[tin['Subsidiary Code'] == 'USA', 'Production LT'] = 1 + tin['Production LT']    # 製作日数=製作日数+1
+tin.loc[tin['Subsidiary Code'] == 'USA', 'Days to Ship on Catalog'] = tin['Production LT'] + tin['DaysTS']     # カタログ納期=製作日数+輸出日数
+tin.loc[(tin['Subsidiary Code'] == 'USA') & (tin['Stock / MTO'] == '0') & (tin['Production LT for STOCK'] == '1'), 'Production LT for STOCK'] = 1 + tin['Production LT']    # 発注納期=製作日数+1
+
+ti = ti.append(tin, sort=False)
+ti['Process Mode'] = '2'  # 処理区分   なぜか？空白
+ti['Master ID'] = '01'  # 登録区分　なぜか？空白
+print(len(ti))
+
+# err_8とerr_8_CをProduct_Slide.txtに追加
+dfs = ti[['Subsidiary Code', 'Product Code', 'err_8', 'err_8_C']]
+p_zetta = (pd.read_csv(path + 'Product_Slide.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
+p_err = pd.merge(p_zetta, dfs, on=('Subsidiary Code', 'Product Code'), how='left')
+p_err.to_csv(path + 'Product_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
+
+ti.drop(columns=['TI対象_z', 'Weight_y', 'Weight Calc Mode_y', 'Weight Calc_y', '位置', 'Weight2', 'DaysTS', 'err_8', 'err_8_C'], inplace=True)    #不要な列を削除
+ti.to_csv(path + 'Product.txt', sep='\t', encoding='utf_16', index=False)  # Zetta_Product.txt　ALL出力
+print(datetime.datetime.now())
 print('fin')
