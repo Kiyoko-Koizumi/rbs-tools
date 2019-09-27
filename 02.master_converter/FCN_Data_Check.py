@@ -4,13 +4,12 @@ import pandas as pd
 import numpy as np
 import csv
 import Type
-import Header
 import datetime
 print(datetime.datetime.now())
 
 # ★★　チェックするファイルを保存するフォルダを下記に指定してください！！　★★
 # ★★　必ず同じフォルダに保存してください！！ フォルダの「\」は「/」にしてください！！　★★
-path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/Data_Check/'
+path='C:/Users/Reiko_Tsushima/Downloads/test/'
 
 # ★★　基準となるtxtファイル名を変えてください！！　↓（緑色のここ）　★★
 a = pd.DataFrame(pd.read_csv(path + 'Product_Master_GRMプーリFCN_ECAL.txt',sep='\t', encoding='utf_16', dtype=str, engine='python', error_bad_lines=False))
@@ -30,7 +29,7 @@ b.to_csv(path + 'B_product.txt', sep='\t', encoding='utf_16', index=False)
 
 dictB ={}
 h = []
-with open(path + 'A_product.txt') as fileB:
+with open(path + 'A_product.txt', encoding='utf_16') as fileB:
         reader = csv.reader(fileB, delimiter='\t')
         reader = csv.reader((line.replace('\0','') for line in fileB))
         for row in reader:
@@ -40,7 +39,7 @@ with open(path + 'A_product.txt') as fileB:
 df = pd.DataFrame()
 df2 = pd.DataFrame()
 df3 = pd.DataFrame()
-with open(path + 'B_product.txt') as fileA:
+with open(path + 'B_product.txt', encoding='utf_16') as fileA:
     reader = csv.reader(fileA, delimiter='\t')
     reader = csv.reader((line.replace('\0', '') for line in fileA))
     for row in reader:
