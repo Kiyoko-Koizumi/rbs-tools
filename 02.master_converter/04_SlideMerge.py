@@ -11,33 +11,33 @@ slide_marge = pd.DataFrame()
 
 # ■Step1 ZettaとSPCの数量帯をMarge
 # Zetta_Slideを基準に結合
-h_order=({'Subsidiary Code':0,'Product Code':1,'slide_no':2, 'spc_slide_no':3, 'qty':4})  # Header並び順
+h_order=({'Subsidiary Code': 0, 'Product Code': 1, 'slide_no': 2, 'spc_slide_no': 3, 'qty': 4})  # Header並び順
 df = pd.DataFrame(columns=h_order)
 
-df = pd.merge(zetta_slide,spc_slide,on=('Subsidiary Code','Product Code','qty'), how='left')
+df = pd.merge(zetta_slide, spc_slide, on=('Subsidiary Code', 'Product Code', 'qty'), how='left')
 
 # ヘッダー名変更
 df = (df.rename(columns={'data_x': 'data'}))
-df.drop(columns=['data_y'],inplace=True)    #不要な列を削除
+df.drop(columns=['data_y'], inplace=True)    #不要な列を削除
 
 # Zetta_SlideとSPC_Slideデータを追加し、重複を削除、data=spcのみを抽出
 df1 = pd.DataFrame(columns=h_order)
 df1 = df1.append(zetta_slide, sort=False)
 df1 = df1.append(spc_slide, sort=False)
 
-df1.drop_duplicates(subset=['Subsidiary Code','Product Code','qty'],keep='first',inplace=True) # 重複データ削除　先頭行残す
+df1.drop_duplicates(subset=['Subsidiary Code', 'Product Code', 'qty'], keep='first', inplace=True) # 重複データ削除　先頭行残す
 df1 = (df1.query('data == "spc"'))  # data=spcで抽出
-df=df.append(df1,sort=False)    # dfに追加
+df=df.append(df1, sort=False)    # dfに追加
 
 # df2=ZettaスライドとSPCスライドをマージしたデータ
 slide_marge = df.loc[:,h_order]
 slide_marge['qty'] = slide_marge['qty'].astype(int) # qtyを数値
-slide_marge = slide_marge.sort_values(by=['Subsidiary Code','Product Code','qty'], ascending=True)  # 並べ替え
+slide_marge = slide_marge.sort_values(by=['Subsidiary Code', 'Product Code', 'qty'], ascending=True)  # 並べ替え
 df = slide_marge
 
 # ■Step2　zetta slide_no空白を埋める
 
-h_order={'Subsidiary Code':0, 'Product Code':1, 'slide_no':2, 'qty':3}
+h_order={'Subsidiary Code': 0, 'Product Code': 1, 'slide_no': 2, 'qty': 3}
 yes = pd.DataFrame(df[df['slide_no'].notnull()])    # slide_no(Zetta)の空白無しを抽出 例　[  1   5  20  35  50  51 100 101 150 301]
 nn = pd.DataFrame(df[df['slide_no'].isnull()]) # slide_no(Zetta)の空白を抽出 例　[201]
 
@@ -49,14 +49,14 @@ z['sa'] = z['sa'].astype(int)
 z['slide_no_y'] = z['slide_no_y'].astype(int)
 z.drop(z.index[z.sa > 0], inplace=True)    #　差が0より大きいものは削除
 z = z.sort_values(by=['qty_y'], ascending=False)  #　空白無しデータの数量を降順に並び替え
-z.drop_duplicates(subset=['Subsidiary Code','Product Code','qty_n'],keep='first', inplace=True)  #　重複削除
+z.drop_duplicates(subset=['Subsidiary Code', 'Product Code', 'qty_n'], keep='first', inplace=True)  #　重複削除
 z['slide_no_n'] = z['slide_no_y'] #　空白スライド番号に空白無しデータのスライド番号を追加
 z = z.rename(columns={'slide_no_n':'slide_no', 'spc_slide_no_n':'spc_slide_no', 'qty_n':'qty'})   # カラム名変更
 
 zz = pd.DataFrame()
 zz = pd.concat([z, yes], sort=True)
 zz['qty'] = zz['qty'].astype(int)
-zz = zz.sort_values(by=['Subsidiary Code','Product Code','qty'], ascending=True)
+zz = zz.sort_values(by=['Subsidiary Code', 'Product Code', 'qty'], ascending=True)
 #zz.drop_duplicates(subset=['Subsidiary Code','Product Code','qty'],keep='first',inplace=True)
 zz = zz.loc[:, h_order]
 #zz.to_csv(path + 'zz_Slide.csv', sep='\t', encoding='utf_16', index=False)  # 出力
@@ -101,7 +101,7 @@ new_slide = pd.DataFrame()
 n_order=({'Subsidiary Code':0, 'Product Code':1, 'new_slide_no':2, 'slide_no':3, 'spc_slide_no':4,
           'Slide Qty ':7, 'Slide Sales Pc/Unit ':8, 'Slide Purchase Pc/Unit ':9, 'Slide Production LT ':10,
           'Slide Days TS ':11, 'Alt Dsct Rt:S ':12, 'Alt Dsct Rt:P ':13, 'Express L Dsct Rt:S ':14, 'Express L Dsct Rt:P ':15,
-          'Express L Slide Days ':16, 'Unit Price Check':17})
+          'Express L Slide Days ':16, 'Unit Price Check':17, 'min_order':18, 'max_order':19})
 
 new_slide = pd.merge(sz, zetta_slide, on=['Subsidiary Code', 'Product Code', 'slide_no'])    # Zetta_Slide.txt
 new_slide = pd.merge(new_slide, spc_slide, on=['Subsidiary Code', 'Product Code', 'spc_slide_no'])    # SPC_Slide.txt
@@ -124,11 +124,11 @@ new_slide = (pd.read_csv(path + 'New_Slide.txt',sep='\t', encoding='utf_16', dty
 new_slide['new_slide_no'] = new_slide['new_slide_no'].astype(int)
 m = max(new_slide['new_slide_no'])
 print(m)
-col=({'Slide Qty ','Slide Sales Pc/Unit ', 'Slide Purchase Pc/Unit ', 'Slide Production LT ',
-      'Slide Days TS ', 'Alt Dsct Rt:S ', 'Alt Dsct Rt:P ','Express L Dsct Rt:S ','Express L Dsct Rt:P ', 'Express L Slide Days '})
+col=({'Slide Qty ', 'Slide Sales Pc/Unit ', 'Slide Purchase Pc/Unit ', 'Slide Production LT ',
+      'Slide Days TS ', 'Alt Dsct Rt:S ', 'Alt Dsct Rt:P ', 'Express L Dsct Rt:S ', 'Express L Dsct Rt:P ', 'Express L Slide Days '})
 
 dfz = pd.DataFrame(new_slide[['Subsidiary Code', 'Product Code']])
-dfz.drop_duplicates(subset=['Subsidiary Code','Product Code'],keep='first',inplace=True) # 重複削除
+dfz.drop_duplicates(subset=['Subsidiary Code', 'Product Code'], keep='first', inplace=True) # 重複削除
 
 for col in col:
     dfs = pd.DataFrame(new_slide[['Subsidiary Code', 'Product Code', 'new_slide_no', col]])
@@ -138,9 +138,9 @@ for col in col:
     for n in range(1, m + 1):
         dfscol.append(col+str(n))
     dfs.columns = dfscol
-    dfz = pd.DataFrame(pd.merge(dfz, dfs, on=['Subsidiary Code','Product Code']))
+    dfz = pd.DataFrame(pd.merge(dfz, dfs, on=['Subsidiary Code', 'Product Code']))
 
-dfz.to_csv(path + 'dfz_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
+#dfz.to_csv(path + 'dfz_Slide.txt', sep='\t', encoding='utf_16', index=False)  # 出力
 
 # ヘッダ並び順作成
 p_order=['Subsidiary Code', 'Product Code']
@@ -153,7 +153,7 @@ for n in range(1, m + 1):
     for col in col:
         p_order.append(col + str(n))
 for n in range(1, m + 1):
-    col = ['Express L Dsct Rt:S ', 'Express L Dsct Rt:P ','Express L Slide Days ']
+    col = ['Express L Dsct Rt:S ', 'Express L Dsct Rt:P ', 'Express L Slide Days ']
     for col in col:
         p_order.append(col + str(n))
 

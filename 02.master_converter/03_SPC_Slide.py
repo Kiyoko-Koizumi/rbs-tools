@@ -19,10 +19,10 @@ for file in files:
     lists.append(file.replace(path + 'SPC_Master/PRODUCT',''))
 n=len(lists)
 
-h_order=({'Subsidiary Code':0,'Product Code':1,'Unit Price Check':2,
-          'spc_slide_no':3, 'qty':4,'production':5,'days_ts':6,'purchase':7, 'rt_p':8,'l_rt_p':9,'l_days':10,'data':11})  # スライドHeader並び順
+h_order=({'Subsidiary Code':0,'Product Code':1,'Unit Price Check':2, 'min_order':3, 'max_order':4,
+          'spc_slide_no':5, 'qty':6,'production':7,'days_ts':8,'purchase':9, 'rt_p':10,'l_rt_p':11,'l_days':12,'data':13})  # スライドHeader並び順
 spc_slide = pd.DataFrame(columns=h_order)   # スライド出力用
-spc_data1=pd.DataFrame([],columns=Header.Header())    # ALLデータ出力用
+spc_data1 = pd.DataFrame([],columns=Header.Header())    # ALLデータ出力用
 
 for l in range(0, n):
     spc = (pd.read_csv(path + 'SPC_Master/PRODUCT/' + lists[l],sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
@@ -31,11 +31,12 @@ for l in range(0, n):
 
     for i in range(1, 11):
         i = str(i)
-        spc_data2 = (spc_data[['Subsidiary Code_y','Product Code', 'Unit Price Check', 'Slide Qty ' + i, 'Slide Purchase Pc/Unit ' + i,
+        spc_data2 = (spc_data[['Subsidiary Code_y','Product Code', 'Unit Price Check', 'Min Qty of Big Order', 'Max Qty of Big Order', 'Slide Qty ' + i, 'Slide Purchase Pc/Unit ' + i,
                                'Slide Production LT ' + i, 'Slide Days TS ' + i,'Alt Dsct Rt:P ' + i,'Express L Dsct Rt:P ' + i, 'Express L Slide Days ' + i]])
         # 列見出し変更（統一） カラム名並びは「h_order」にて解消
         # Subsidiary Code_yは立上データの現法コード
-        spc_data3 = (spc_data2.rename(columns={'Subsidiary Code_y':'Subsidiary Code','slide_no':'spc_slide_no', 'Slide Qty ' + i: 'qty','Slide Purchase Pc/Unit ' + i: 'purchase',
+        spc_data3 = (spc_data2.rename(columns={'Subsidiary Code_y':'Subsidiary Code', 'Min Qty of Big Order':'min_order', 'Max Qty of Big Order':'max_order','slide_no':'spc_slide_no',
+                                               'Slide Qty ' + i: 'qty','Slide Purchase Pc/Unit ' + i: 'purchase',
                                                'Slide Production LT ' + i:'production', 'Slide Days TS ' + i:'days_ts','Alt Dsct Rt:P ' + i: 'rt_p',
                                                'Express L Dsct Rt:P ' + i:'l_rt_p', 'Express L Slide Days ' + i:'l_days'}))
         spc_data3['l_rt_p'] = 0
@@ -50,11 +51,17 @@ spc_slide = (spc_slide.query('qty > "0"'))  # 数量スライド>0で抽出
 
 # Days_Ts.xlsx結合 製作日数・カタログ納期更新
 # 1Rec単位で更新をしたがRec数が増えたら遅いので変更
-spc_slide = pd.merge(spc_slide, days_ts,on=['Subsidiary Code'])
+spc_slide = pd.merge(spc_slide, days_ts, on=['Subsidiary Code'])
 
+# 数量>=大口上限数量 99で埋める
 spc_slide['qty'] = spc_slide['qty'].astype(int)
+spc_slide['max_order'] = spc_slide['max_order'].astype(int)
 spc_slide['production'] = spc_slide['production'].astype(int)
 spc_slide['DaysTS'] = spc_slide['DaysTS'].astype(int)
+
+spc_slide.loc[(spc_slide.qty >= spc_slide.max_order), 'production'] = 99
+spc_slide.loc[(spc_slide.qty >= spc_slide.max_order), 'days_ts'] = 99
+
 spc_slide['c'] = spc_slide['production'] - spc_slide['DaysTS']
 spc_slide['d'] = spc_slide['production'] + spc_slide['DaysTS']
 spc_slide['a'] = spc_slide['production']
@@ -62,13 +69,14 @@ spc_slide['c'] = spc_slide['c'].astype(int)
 spc_slide['d'] = spc_slide['d'].astype(int)
 data = spc_slide.copy()
 
-# 製作日数
-data.loc[(data.production == 99), 'production'] = data['c']
-data.loc[(data.production != 99), 'production'] = data['production']
 # カタログ納期
 data.loc[(data.d > 0) & (data.d < 99) , 'days_ts'] = data['d']
 data.loc[(data.d > 99) , 'days_ts'] = 99
 data.loc[(data.a == 0) | (data.a == 99) , 'days_ts'] = data['production']
+
+# 製作日数
+data.loc[(data.production == 99), 'production'] = data['c']
+data.loc[(data.production != 99), 'production'] = data['production']
 
 # 1Rec単位で書いたが・・・・ちょぉ～遅い！！！
 #df2 = pd.DataFrame()
