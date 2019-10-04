@@ -10,8 +10,8 @@ path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Pyth
 z_p = (pd.read_csv(path + 'Zetta_Product.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
 s_p = (pd.read_csv(path + 'SPC_Product.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
 
-df = pd.DataFrame(pd.merge(z_p, s_p, on=('Product Code'), suffixes=['_z', '_s'], how='left'))
-#df.to_csv(path + '20190819_Product.txt', sep='\t', encoding='utf_16', index=False)  # Zetta_Product.txt　ALL出力
+df = pd.DataFrame(pd.merge(z_p, s_p, on='Product Code', suffixes=['_z', '_s'], how='left'))
+# df.to_csv(path + '20190819_Product.txt', sep='\t', encoding='utf_16', index=False)  # Zetta_Product.txt　ALL出力
 
 # カラム名末尾「_z」=Zetta　「_s」=Spc
 df['Production LT_s'] = df['Production LT_s'].astype(int)   # 製作日数　数値型
@@ -225,23 +225,23 @@ tin['Production LT'] = tin['Production LT'].astype(int)
 tin['DaysTS'] = tin['DaysTS'].astype(int)
 
 # ストークA売単価=0
-tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Calc Type for Sales'] = '0' # ストークA適用フラグ
+tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Calc Type for Sales'] = '0'   # ストークA適用フラグ
 tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Calc Type for Purchase'] = '0'  # ストークA仕入計算方法
 tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Purchase Pc/Unit'] = 0    # ストークA仕入単価
 tin.loc[tin['Express A Sales Pc/Unit'] == '0', 'Express A Production LT'] = 0   # ストークA製作日数
 
 # ストークA早割売単価=0
-tin.loc[tin['Special Express A Sales Pc/Unit'] == '0', 'Special Express A Calc Type for Sales'] = '0' # ストークA早割適用フラグ
+tin.loc[tin['Special Express A Sales Pc/Unit'] == '0', 'Special Express A Calc Type for Sales'] = '0'   # ストークA早割適用フラグ
 tin.loc[tin['Special Express A Sales Pc/Unit'] == '0', 'Plant Express A Purchase Calc'] = '0'  # ストークA同梱仕入計算方法
 tin.loc[tin['Special Express A Sales Pc/Unit'] == '0', 'Plant Express A Purchase Pc/Unit'] = 0    # ストークA同梱仕入単価
 
 # ストークB売単価=0
-tin.loc[tin['Express B Sales Pc/Unit'] == '0', 'Express B Calc Type for Sales'] = '0' # ストークB適用フラグ
+tin.loc[tin['Express B Sales Pc/Unit'] == '0', 'Express B Calc Type for Sales'] = '0'   # ストークB適用フラグ
 tin.loc[tin['Express B Sales Pc/Unit'] == '0', 'Express B Purchase Calc'] = '0'  # ストークB同梱仕入計算方法
 tin.loc[tin['Express B Sales Pc/Unit'] == '0', 'Express B Purchase Pc/Unit'] = 0    # ストークB同梱仕入単価
 
 # ストークC売単価=0
-tin.loc[tin['Express C Sales Pc/Unit'] == '0', 'Express C Calc Type for Sales'] = '0' # ストークC適用フラグ
+tin.loc[tin['Express C Sales Pc/Unit'] == '0', 'Express C Calc Type for Sales'] = '0'   # ストークC適用フラグ
 tin.loc[tin['Express C Sales Pc/Unit'] == '0', 'Express C Purchase Calc'] = '0'  # ストークC同梱仕入計算方法
 tin.loc[tin['Express C Sales Pc/Unit'] == '0', 'Express C Purchase Pc/Unit'] = 0    # ストークC同梱仕入単価
 
