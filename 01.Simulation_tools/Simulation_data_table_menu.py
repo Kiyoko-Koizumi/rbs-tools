@@ -11,6 +11,7 @@ import tkinter.ttk as ttk
 from Orders_creation import Orders_creation_change_date
 from Orders_creation import Orders_creation_no_change_date
 from Orders_prediction import Orders_prediction
+from Orders_prediction import Orders_prediction_for_Supplier
 from Production_threshold import PRODUCTION_THRESHOLD
 
 csv.field_size_limit(1000000000)
@@ -33,6 +34,8 @@ def select_func():
                        command=lambda: Orders_creation_no_change_date.Orders_creation_no_change_date(), width=30)
     button3 = tk.Button(main, text="受注予測作成",
                        command=lambda: Orders_prediction.Orders_prediction(), width=30)
+    button5 = tk.Button(main, text="工場DBI向け受注予測作成",
+                       command=lambda: Orders_prediction_for_Supplier.Orders_prediction_for_Supplier(), width=30)
     button4 = tk.Button(main, text="割付数量・加工済数量作成",
                        command=lambda: PRODUCTION_THRESHOLD.PRODUCTION_THRESHOLD(), width=30)
     button13 = tk.Button(main, text="処理終了",
@@ -46,7 +49,8 @@ def select_func():
     button1.grid(row=1, column=2)
     button2.grid(row=2, column=2)
     button3.grid(row=3, column=2)
-    button4.grid(row=4, column=2)
+    button5.grid(row=4, column=2)
+    button4.grid(row=5, column=2)
     button13.grid(row=13, column=4)
     main.mainloop()
     return
