@@ -94,11 +94,11 @@ FC_MJP = pd.merge(FC_MJP, inter_ratio, on=['CLASSIFY_CD', 'SUBSIDIARY_CD'], how=
 FC_MJP = FC_MJP.astype({'比率': float, '数量の合計': float})
 FC_MJP.loc[:, '数量の合計'] = FC_MJP['数量の合計'] * FC_MJP['比率']
 
-# 確認用　その他のカラム名を区別
-FC_A.loc[((FC_A['調達Gr'] == '現地調達') & (FC_A['管理Gr'] == 'その他')), '管理Gr'] = 'その他_現地調達'
-FC_A.loc[((FC_A['調達Gr'] == 'ECAL') & (FC_A['管理Gr'] == 'その他')), '管理Gr'] = 'その他_ECAL'
-FC_A.loc[((FC_A['調達Gr'] == '現地調達') & (FC_A['管理Gr'] == '無錫森本')), '管理Gr'] = '無錫森本_現地調達'
-FC_A.loc[((FC_A['調達Gr'] == 'ECAL') & (FC_A['管理Gr'] == '無錫森本')), '管理Gr'] = '無錫森本_ECAL'
+# # 確認用　その他のカラム名を区別
+# FC_A.loc[((FC_A['調達Gr'] == '現地調達') & (FC_A['管理Gr'] == 'その他')), '管理Gr'] = 'その他_現地調達'
+# FC_A.loc[((FC_A['調達Gr'] == 'ECAL') & (FC_A['管理Gr'] == 'その他')), '管理Gr'] = 'その他_ECAL'
+# FC_A.loc[((FC_A['調達Gr'] == '現地調達') & (FC_A['管理Gr'] == '無錫森本')), '管理Gr'] = '無錫森本_現地調達'
+# FC_A.loc[((FC_A['調達Gr'] == 'ECAL') & (FC_A['管理Gr'] == '無錫森本')), '管理Gr'] = '無錫森本_ECAL'
 
 # データを結合する
 FC_A = FC_A.append(FC_FCNSPC, sort=False)
@@ -132,10 +132,13 @@ FC_A.loc[(FC_A['管理Gr'].str.contains('FCN') |
           FC_A['管理Gr'].str.contains('DLO') |
           FC_A['管理Gr'].str.contains('KOR') |
           FC_A['管理Gr'].str.contains('駿河阿見')), '内製'] = '内製'
+# A表設定月を入れる
+today = dt.datetime.today().strftime("%Y%m")
+FC_A.loc[:, 'A表設定月'] = today
 
 # ファイルをアウトプット
 fname = '//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/output/A表' + dt.datetime.today().strftime(
     "%Y%m%d") + '.xlsx'
 FC_A.to_excel(fname, sheet_name='A表', index=False)
 
-print("Finish!")
+print("A表作成が完了しました!")
