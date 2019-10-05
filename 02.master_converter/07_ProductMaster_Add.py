@@ -58,7 +58,7 @@ for i in range(0, len(sub)):
     df3.to_csv(path + 'Update_txt/' + sub[i] + '_Product.txt', sep='\t', encoding='utf_16', index=False)  # Product Master 現法毎に出力　フォルダ「Update_txt」
 
     df3 = df3.astype(Type.type())   # 検証用
-    df3.fillna('', inplace=True)  # 検証用　←だめ
+    df3.fillna('', inplace=True)  # 検証用　←だめ fillna(method='ffill')
     #df3 = df3.replace(np.nan, '', regex=True)　←だめ
 
     #writer = pd.ExcelWriter(path + 'Update_txt/' + sub[i] + '_Product.xlsx', engine='xlsxwriter')　　←だめ　なぜか？出力されない
