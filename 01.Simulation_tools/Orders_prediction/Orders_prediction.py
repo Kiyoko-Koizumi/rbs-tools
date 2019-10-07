@@ -25,6 +25,7 @@ import pandas.tseries.offsets as offsets
 from multiprocessing import Pool
 import multiprocessing as multi
 import datetime
+import copy
 
 def getFACI_CD(fc_name, list_pg):
     # SELECTボタンが押されたときの動き
@@ -322,10 +323,10 @@ def Orders_prediction():
             # orderのサプライヤコードが指定のサプライヤのものだけにする
             order_sup = order[order['実績仕入先コード'] == pg_name].copy()
             if len(order_sup) > 0:
-                Tgt_S = Tgt_S_M.copy()
-                Tgt_E = Tgt_E_M.copy()
-                Pre_S = Pre_S_M.copy()
-                Pre_E = Pre_E_M.copy()
+                Tgt_S = copy.copy(Tgt_S_M)
+                Tgt_E = copy.copy(Tgt_E_M)
+                Pre_S = copy.copy(Pre_S_M)
+                Pre_E = copy.copy(Pre_E_M)
                 # 受注日、出荷日をdate形式へ変更
                 order_sup = order_sup.astype({'受注日': str, '受注実績SSD': str})
                 order_sup['受注日'] = order_sup['受注日'].str[0:4] + '-' + order_sup['受注日'].str[4:6] + '-' + order_sup['受注日'].str[6:8]
