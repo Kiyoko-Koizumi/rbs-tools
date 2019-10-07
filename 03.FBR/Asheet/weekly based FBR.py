@@ -47,14 +47,16 @@ def check_cl(list_f):
 
 
 
+
 #ファイル選択
 def read_data():
+
     # ファイル選択ダイアログの表示
     root = tkinter.Tk()
     root.withdraw()
     fTyp = [("", "*")]
     iDir = os.path.abspath(os.path.dirname(__file__))
-
+    tkinter.messagebox.showinfo('ファイル選択', '③FBR需給一覧(SD-33371)_モニター用.xlsxを選択してください')
     # データの取得
     # ここの1行を変更 askopenfilename → askopenfilenames
     file = tkinter.filedialog.askopenfilenames(filetypes=fTyp, initialdir=iDir)
@@ -63,28 +65,19 @@ def read_data():
     list_f = list(file)
 
     #"と,置き換え
-    check_wq(list_f)
-    check_cl(list_f)
+    #check_wq(list_f)
+    #check_cl(list_f)
 
     # 1つ目のファイルを開く
     f_name = os.path.basename(list_f[0])
     f_pass = os.path.dirname(list_f[0])
     os.chdir(f_pass)
 
-    # 必要な列のみ読み込む
-    print(f_name)
-    order = pd.read_csv(f_name, sep="\t", encoding='utf-8', engine='python', error_bad_lines=False)
-
-    # ファイルを繰り返し開き結合する
-    for r in range(1, len(list_f)):
-        f_name = os.path.basename(list_f[r])
-        print(f_name)
-        order_add = pd.read_csv(f_name, sep="\t", encoding='utf-8', engine='python', error_bad_lines=False)
-        # ファイルを追加する
-        order = order.append(order_add, sort=False)
-    order.reset_index(drop=True, inplace=True)
-
+    # ファイルを開く
+    order = pd.read_excel(f_name, dtype=object)
+    
     return order
+
 
 #日付を基にデータを整える
 def supp_couont(d, sub_name, calendar_dict, FBR):
@@ -234,10 +227,6 @@ if __name__ == '__main__':
      #calendarのカラムを管理Grに揃える
      calendar = pd.merge(calendar_all, SP_name, on=['Supplier'], how='left')
 
-     # 一次結果アウトプット
-     f_name2 = 'calendar.tsv'
-     calendar.to_csv(f_name2, sep='\t', encoding=font, index=True)
-
      #FBRと結合するために、データ型を揃える
      calendar = calendar.loc[:, ['日付_y', '稼働日数', '管理Gr']]
      calendar['日付_y'] = calendar['日付_y'].astype(str)
@@ -248,10 +237,6 @@ if __name__ == '__main__':
 
      #管理Gr分の稼働日を反映
      FBR_SUM = pd.merge(FBR, calendar, on=['日付_y', '管理Gr'], how='left')
-
-     # 一次結果アウトプット
-     f_name3 = 'FBR_temp.tsv'
-     FBR_SUM.to_csv(f_name3, sep='\t', encoding=font, index=True)
 
 
      # 稼働日に基づいて需要予測などの値を修正
