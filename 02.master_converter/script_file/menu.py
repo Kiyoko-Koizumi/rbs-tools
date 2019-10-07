@@ -25,8 +25,11 @@ def select_func():
     label3 = tk.Label(root, text="R.B.Sマスタ作成", font=("", 12), height=2)
     label4 = tk.Label(root, text="　　　　　", font=("", 12), height=2)
     label5 = tk.Label(root, text="　　　　　", font=("", 12), height=2)
+    label6 = tk.Label(root, text="ミラー化調査", font=("", 12), height=2)
 
     # ボタンの作成（コールバックコマンドには、コンボボックスの値を取得する処理を定義）
+    button1 = tk.Button(root, text="Product_master to ECAL",
+                        command=lambda: func1(), width=30)
     button1 = tk.Button(root, text="Product_master to ECAL",
                        command=lambda: func1(), width=30)
     button2 = tk.Button(root, text="Product_master to FCN",
@@ -55,14 +58,17 @@ def select_func():
                        command=lambda: func1(), width=30)
     button12 = tk.Button(root, text="MCOST商品チェック詳細マスタ",
                        command=lambda: func1(), width=30)
+    button14 = tk.Button(root, text="商品、商品別仕入先マスタより抽出",
+                       command=lambda: func1(), width=30)
     button13 = tk.Button(root, text="処理終了",
                        command=lambda: sys.exit())
     # コンボボックスの配置
     label1.grid(row=0, column=0)
     label2.grid(row=1, column=0)
-    label3.grid(row=7, column=0)
+    label3.grid(row=8, column=0)
     label4.grid(row=0, column=1)
     label5.grid(row=0, column=3)
+    label6.grid(row=7, column=0)
     # ボタンの配置
     button1.grid(row=1, column=2)
     button2.grid(row=2, column=2)
@@ -72,13 +78,14 @@ def select_func():
     button14.grid(row=3, column=4)
     button15.grid(row=4, column=4)
     button6.grid(row=6, column=2)
-    button7.grid(row=7, column=2)
-    button8.grid(row=8, column=2)
-    button9.grid(row=9, column=2)
-    button10.grid(row=10, column=2)
-    button11.grid(row=11, column=2)
-    button12.grid(row=12, column=2)
-    button13.grid(row=13, column=5)
+    button14.grid(row=7, column=2)
+    button7.grid(row=8, column=2)
+    button8.grid(row=9, column=2)
+    button9.grid(row=10, column=2)
+    button10.grid(row=11, column=2)
+    button11.grid(row=12, column=2)
+    button12.grid(row=13, column=2)
+    button13.grid(row=14, column=5)
     root.mainloop()
     return
 
