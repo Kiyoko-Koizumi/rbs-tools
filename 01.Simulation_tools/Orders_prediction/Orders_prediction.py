@@ -14,7 +14,7 @@
 import os, tkinter, tkinter.filedialog, tkinter.messagebox
 import csv
 from typing import List
-
+import glob
 import pandas as pd
 import datetime as dt
 import tkinter as tk
@@ -26,7 +26,7 @@ from multiprocessing import Pool
 import multiprocessing as multi
 import datetime
 
-def getFACI_CD():
+def getFACI_CD(fc_name, list_pg):
     # SELECTボタンが押されたときの動き
     def getitemcode():
         root.withdraw()
@@ -34,8 +34,6 @@ def getFACI_CD():
 
     # 抽出したい製造グループを指定する
     # GUIの作成
-    # サプライヤ選択肢を作成
-    list_pg = ['0143', '7017', '3764', '0FCN', '0AIO', 'SPCM']
     year_l = ['2017', '2018', '2019', '2020', '2021', '2022']
     month_l = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     day_l = []
@@ -45,7 +43,7 @@ def getFACI_CD():
 
     # ルートフレームの作成
     root = tk.Tk()
-    label1 = tk.Label(root, text="【サプライヤを選択】", font=("", 12), height=2)
+    label1 = tk.Label(root, text=fc_name + "を元に" + ','.join(list_pg) + 'の受注予測を作成します', font=("", 12), height=2)
     label2 = tk.Label(root, text="【受注データ利用期間　開始日】", font=("", 12), height=2)
     label3 = tk.Label(root, text="【受注データ利用期間　終了日】", font=("", 12), height=2)
     label4 = tk.Label(root, text="【予測データ作成期間　開始日】", font=("", 12), height=2)
@@ -64,7 +62,6 @@ def getFACI_CD():
     label17 = tk.Label(root, text="日", font=("", 12), height=2)
 
     # コンボボックスの作成(rootに配置,リストの値を編集不可(readonly)に設定)
-
     combo_l = []
     for c in range(13):
         combo = ttk.Combobox(root, state='readonly', width=10)
@@ -85,7 +82,7 @@ def getFACI_CD():
 
     # コンボボックスの配置
     label1.grid(row=0, column=0)
-    combo_l[0].grid(row=0, column=1)
+    # combo_l[0].grid(row=0, column=1)
     label2.grid(row=4, column=0)
     combo_l[1].grid(row=4, column=1)
     combo_l[5].grid(row=4, column=3)
@@ -205,7 +202,6 @@ def wrapper3(args):
 
 
 def Orders_prediction():
-
     # from tqdm import tqdm
     csv.field_size_limit(1000000000)
 
@@ -222,7 +218,7 @@ def Orders_prediction():
     # ファイル選択ダイアログの表示
     root = tk.Tk()
     root.withdraw()
-    fTyp = [("","*")]
+    fTyp = [("", "*")]
     iDir = local_pass
 
     # 受注実績データの取得
@@ -233,10 +229,24 @@ def Orders_prediction():
         # 選択ファイルリスト作成
         list_f = list(file)
 
-        # リストボックスの作成を実行
-        result = getFACI_CD()
+        # FCデータ取り込み
+        # ファイル名を取得
+        fc_pass = glob.glob(local_pass + 'FC_*.csv')
+        fc_name = os.path.basename(fc_pass[0])
+        fc_cd = fc_name.replace('FC_', '')
+        fc_cd = fc_cd.replace('.csv', '')
 
-        pg_name = result[0]
+        FC = pd.read_csv(local_pass + fc_name, encoding=font, dtype='object', index_col=None)
+
+        # FCからサプライヤコードを抽出
+        fc_sup = FC.drop_duplicates(subset=['SUPPLIER_CD'], keep='first', inplace=False)  # 重複削除
+        fc_sup = fc_sup.loc[::, ['SUPPLIER_CD']]
+        fc_sup = fc_sup.T
+        fc_sup_l = fc_sup.values.tolist()
+        list_pg = fc_sup_l[0]
+
+        # リストボックスの作成を実行
+        result = getFACI_CD(fc_name, list_pg)
         check_list = [result[5], result[6], result[7], result[8], result[9], result[10], result[11], result[12]]
         for c in range(len(check_list)):
             if len(check_list[c]) == 1:
@@ -253,7 +263,8 @@ def Orders_prediction():
 
         # 必要な列のみ読み込む
         print(f_pass + '/' + f_name)
-        order = pd.read_csv(f_pass + '/' + f_name, sep='\t', encoding=font, dtype=object, engine='python', error_bad_lines=False,
+        order = pd.read_csv(f_pass + '/' + f_name, sep='\t', encoding=font, dtype=object, engine='python',
+                            error_bad_lines=False,
                             usecols=['番号', '現法コード', 'グローバル番号', '受注日・見積回答日', '受注時間・見積回答時間', 'JST変換受注日・JST変換見積回答日',
                                      'JST変換受注時間・JST変換見積回答時間', '見積有効日', '見積有効時間', 'JST変換見積有効日', 'JST変換見積有効時間',
                                      'アンフィット種別', '得意先コード', '直送先コード', 'ＭＣコード', 'インナーコード', '商品コード', '実績現法コード', '実績仕入先コード',
@@ -302,310 +313,303 @@ def Orders_prediction():
         # 条件を作成
         condition = Tgt_S + ' <= 受注日 <= ' + Tgt_E
         order = order.query(condition)
-        # orderのサプライヤコードが指定のサプライヤのものだけにする
-        order = order[order['実績仕入先コード'] == pg_name]
 
-        if len(order)>0:
+        # 作成したデータを入れるdfを作成
+        prediction_all = pd.DataFrame(columns=['SUBSIDIARY_CD', 'SUPPLIER_CD', 'FACILITY_CD', 'BASE_DATE', 'BASE_DATE_ADD_DAYS',
+                      'PREDICTION_QUANTITY', 'UPD_COUNT', 'DEL_FLG', 'REG_USR', 'REG_TIME', 'UPD_USR', 'UPD_TIME'])
 
-            # 受注日、出荷日をdate形式へ変更
-            order = order.astype({'受注日': str, '受注実績SSD': str})
-            order['受注日'] = order['受注日'].str[0:4] + '-' + order['受注日'].str[4:6] + '-' + order['受注日'].str[6:8]
-            order['受注実績SSD'] = order['受注実績SSD'].str[0:4] + '-' + order['受注実績SSD'].str[4:6] + '-' + order['受注実績SSD'].str[6:8]
+        for pg_name in list_pg:
+            # orderのサプライヤコードが指定のサプライヤのものだけにする
+            order_sup = order[order['実績仕入先コード'] == pg_name].copy()
+            if len(order_sup) > 0:
+                # 受注日、出荷日をdate形式へ変更
+                order_sup = order_sup.astype({'受注日': str, '受注実績SSD': str})
+                order_sup['受注日'] = order_sup['受注日'].str[0:4] + '-' + order_sup['受注日'].str[4:6] + '-' + order_sup['受注日'].str[6:8]
+                order_sup['受注実績SSD'] = order_sup['受注実績SSD'].str[0:4] + '-' + order_sup['受注実績SSD'].str[4:6] + '-' + order_sup['受注実績SSD'].str[
+                                                                                                       6:8]
 
-            # 受注曜日カラムを追加
-            order['weekday'] = [dt.datetime.strptime(x, "%Y-%m-%d").strftime('%a') for x in order['受注日']]
+                # 受注曜日カラムを追加
+                order_sup['weekday'] = [dt.datetime.strptime(x, "%Y-%m-%d").strftime('%a') for x in order_sup['受注日']]
 
-            # 受注日と受注実績SSDをdate形式に変換
-            order['受注日'] = pd.to_datetime(order['受注日'])
-            order['受注実績SSD'] = pd.to_datetime(order['受注実績SSD'])
+                # 受注日と受注実績SSDをdate形式に変換
+                order_sup['受注日'] = pd.to_datetime(order_sup['受注日'])
+                order_sup['受注実績SSD'] = pd.to_datetime(order_sup['受注実績SSD'])
 
-            # 受注日をDatetimeIndexとし年、月、曜日のindexを追加
-            order = order.set_index('受注日')
-            order = order.set_index([order.index.year, order.index.month, order.index])
-            order.index.names = ['year', 'month', '受注日']
-            order = order.reset_index()
+                # 受注日をDatetimeIndexとし年、月、曜日のindexを追加
+                order_sup = order_sup.set_index('受注日')
+                order_sup = order_sup.set_index([order_sup.index.year, order_sup.index.month, order_sup.index])
+                order_sup.index.names = ['year', 'month', '受注日']
+                order_sup = order_sup.reset_index()
 
-            # 納期属性カラムを追加
-            # 非稼働日カレンダを指定
-            nowork_day_w = calendar_dict[pg_name][:]
+                # 納期属性カラムを追加
+                # 非稼働日カレンダを指定
+                nowork_day_w = calendar_dict[pg_name][:]
 
-            # カレンダのリストのstrを1行ずつdate形式に変換
-            for i in range(0, len(nowork_day_w)):
-                nowork_day_w[i] = dt.datetime.strptime(nowork_day_w[i], "%Y-%m-%d")
+                # カレンダのリストのstrを1行ずつdate形式に変換
+                for i in range(0, len(nowork_day_w)):
+                    nowork_day_w[i] = dt.datetime.strptime(nowork_day_w[i], "%Y-%m-%d")
 
-            # 納期属性を計算
-            order['納期属性'] = [(z - y).days - len(list(filter(lambda x: y <= x <= z, nowork_day_w))) for y, z in
-                             zip(order['受注日'], order['受注実績SSD'])]
+                # 納期属性を計算
+                order_sup['納期属性'] = [(z - y).days - len(list(filter(lambda x: y <= x <= z, nowork_day_w))) for y, z in
+                                 zip(order_sup['受注日'], order_sup['受注実績SSD'])]
 
-            # 納期属性を73以上は全て73,0未満のRECは0へ（削除も検討？正しくない）
-            order.loc[order['納期属性'] > 73, '納期属性'] = 73
-            order.loc[order['納期属性'] < 0, '納期属性'] = 0
-            # order = order.query('納期属性 >= 0')
-            order = order.astype({'数量': int})
+                # 納期属性を73以上は全て73,0未満のRECは0へ（削除も検討？正しくない）
+                order_sup.loc[order_sup['納期属性'] > 73, '納期属性'] = 73
+                order_sup.loc[order_sup['納期属性'] < 0, '納期属性'] = 0
+                # order_sup = order_sup.query('納期属性 >= 0')
+                order_sup = order_sup.astype({'数量': int})
 
-            # 現法毎の実績,稼働日数を集計
-            # 現法毎の年間数量を集計
+                # 現法毎の実績,稼働日数を集計
+                # 現法毎の年間数量を集計
 
-            order_subtotal = order.groupby(['year', 'month'], as_index=False)['数量'].sum()
-            order_subtotal = order_subtotal.astype({'year': str, 'month': str})
-            # order_subtotalを割る製造拠点の稼働日を集計
-            order_subtotal['開始日'] = pd.to_datetime((order_subtotal['year'] + '/' + order_subtotal['month'] + '/01'),
-                                                   format='%Y/%m/%d')
-            order_subtotal['終了日'] = order_subtotal['開始日'] + offsets.MonthBegin(1)
-            order_subtotal['月稼働日'] = [(z - y).days - len(list(filter(lambda x: y <= x < z, nowork_day_w))) for y, z in
-                                      zip(order_subtotal['開始日'], order_subtotal['終了日'])]
-            order_subtotal['月平均本数'] = (order_subtotal['数量'] / order_subtotal['月稼働日']).round(3)
+                order_subtotal = order_sup.groupby(['year', 'month'], as_index=False)['数量'].sum()
+                order_subtotal = order_subtotal.astype({'year': str, 'month': str})
+                # order_subtotalを割る製造拠点の稼働日を集計
+                order_subtotal['開始日'] = pd.to_datetime((order_subtotal['year'] + '/' + order_subtotal['month'] + '/01'),
+                                                       format='%Y/%m/%d')
+                order_subtotal['終了日'] = order_subtotal['開始日'] + offsets.MonthBegin(1)
+                order_subtotal['月稼働日'] = [(z - y).days - len(list(filter(lambda x: y <= x < z, nowork_day_w))) for y, z in
+                                          zip(order_subtotal['開始日'], order_subtotal['終了日'])]
+                order_subtotal['月平均本数'] = (order_subtotal['数量'] / order_subtotal['月稼働日']).round(3)
 
-            # 現法毎の期間中の受注数量比を算出
-            order_subratio = order.groupby(['year', '現法コード'], as_index=False)['数量'].sum()
-            order_subratio['合計'] = order_subtotal['数量'].sum()
-            order_subratio['ratio'] = (order_subratio['数量'] / order_subratio['合計']).round(3)
-            order_subratio.drop(['数量', '合計'], axis=1, inplace=True)
+                # 現法毎の期間中の受注数量比を算出
+                order_subratio = order_sup.groupby(['year', '現法コード'], as_index=False)['数量'].sum()
+                order_subratio['合計'] = order_subtotal['数量'].sum()
+                order_subratio['ratio'] = (order_subratio['数量'] / order_subratio['合計']).round(3)
+                order_subratio.drop(['数量', '合計'], axis=1, inplace=True)
 
-            # 月ごとの数量合計に現法比率をかける yearのtypeを統一する
-            order_subtotal = order_subtotal.astype({'year': int, 'month': int})
-            order_subtotal = pd.merge(order_subtotal, order_subratio, on=['year'], how='left')
-            order_subtotal['月平均本数'] = (order_subtotal['月平均本数'] * order_subtotal['ratio']).round(3)
+                # 月ごとの数量合計に現法比率をかける yearのtypeを統一する
+                order_subtotal = order_subtotal.astype({'year': int, 'month': int})
+                order_subtotal = pd.merge(order_subtotal, order_subratio, on=['year'], how='left')
+                order_subtotal['月平均本数'] = (order_subtotal['月平均本数'] * order_subtotal['ratio']).round(3)
 
-            # とりあえず実績をFCの数値をして利用する
-            # FCを実績で作成する場合は期間を出荷日で規定
-            # しかし受注予測は受注日で規定　Tgt_S,Eを使ったフィルタリングでは不足
-            # とはいえ基本的にFCは外から入れることにする
-            # 不要列削除
-            # order_subtotal.drop(['数量', '開始日', '終了日', '月稼働日', 'ratio'], axis=1, inplace=True)
-            # FC = order_subtotal
+                # とりあえず実績をFCの数値をして利用する
+                # FCを実績で作成する場合は期間を出荷日で規定
+                # しかし受注予測は受注日で規定　Tgt_S,Eを使ったフィルタリングでは不足
+                # とはいえ基本的にFCは外から入れることにする
+                # 不要列削除
+                # order_subtotal.drop(['数量', '開始日', '終了日', '月稼働日', 'ratio'], axis=1, inplace=True)
+                # FC = order_subtotal
 
-            # FCデータ取り込み
-            FC = pd.read_csv(local_pass + 'FC.csv', encoding=font, dtype='object', index_col=None)
-            # header名の変更
-            FC = FC.rename(columns={'SUBSIDIARY_CD': '現法コード'})
-            # SUPPLIER_CDの指定
-            FC = FC[FC['SUPPLIER_CD'] == pg_name]
-            FC = FC.astype({'year': str, 'month': str, 'FC': float})
+                # header名の変更
+                FC = FC.rename(columns={'SUBSIDIARY_CD': '現法コード'})
+                # SUPPLIER_CDの指定
+                FC = FC[FC['SUPPLIER_CD'] == pg_name]
+                FC = FC.astype({'year': str, 'month': str, 'FC': float})
 
-            # FCを割る製造拠点の稼働日を集計しFCを日当り数量へ
-            FC['開始日'] = pd.to_datetime((FC['year'] + '/' + FC['month'] + '/01'), format='%Y/%m/%d')
-            FC['終了日'] = FC['開始日'] + offsets.MonthBegin(1)
-            FC['月稼働日'] = [(z - y).days - len(list(filter(lambda x: y <= x < z, nowork_day_w))) for y, z in
-                          zip(FC['開始日'], FC['終了日'])]
-            FC['月平均本数'] = (FC['FC'] / FC['月稼働日']).round(3)
-            FC = FC.astype({'year': int, 'month': int})
+                # FCを割る製造拠点の稼働日を集計しFCを日当り数量へ
+                FC['開始日'] = pd.to_datetime((FC['year'] + '/' + FC['month'] + '/01'), format='%Y/%m/%d')
+                FC['終了日'] = FC['開始日'] + offsets.MonthBegin(1)
+                FC['月稼働日'] = [(z - y).days - len(list(filter(lambda x: y <= x < z, nowork_day_w))) for y, z in
+                              zip(FC['開始日'], FC['終了日'])]
+                FC['月平均本数'] = (FC['FC'] / FC['月稼働日']).round(3)
+                FC = FC.astype({'year': int, 'month': int})
 
-            # 曜日ごとの稼働日をカウント
-            Tgt_S = dt.datetime.strptime(Tgt_S, '%Y%m%d')
-            Tgt_E = dt.datetime.strptime(Tgt_E, '%Y%m%d')
-            week_count = pd.DataFrame({'count': [], 'weekday': []})
-            count = 0
-            while Tgt_S <= Tgt_E:
-                if not Tgt_S.strftime('%Y-%m-%d') in calendar_dict[pg_name]:
-                    weekday = Tgt_S.strftime('%a')
-                    week_count.loc[count] = [Tgt_S, weekday]
-                    count += 1
-                Tgt_S = Tgt_S + dt.timedelta(days=1)
-            week_count = week_count.groupby(['weekday'], as_index=False).count()
+                # 曜日ごとの稼働日をカウント
+                Tgt_S = dt.datetime.strptime(Tgt_S, '%Y%m%d')
+                Tgt_E = dt.datetime.strptime(Tgt_E, '%Y%m%d')
+                week_count = pd.DataFrame({'count': [], 'weekday': []})
+                count = 0
+                while Tgt_S <= Tgt_E:
+                    if not Tgt_S.strftime('%Y-%m-%d') in calendar_dict[pg_name]:
+                        weekday = Tgt_S.strftime('%a')
+                        week_count.loc[count] = [Tgt_S, weekday]
+                        count += 1
+                    Tgt_S = Tgt_S + dt.timedelta(days=1)
+                week_count = week_count.groupby(['weekday'], as_index=False).count()
 
-            # 曜日指数計算
-            # 日付毎に数量を集計
-            # 大口を除く
-            order_small = order[order['アンフィット種別'] == '0']
-            order_day = order_small.groupby(['現法コード', 'weekday', '受注日'], as_index=False)['数量'].sum()
-            order_week = order_day.groupby(['現法コード', 'weekday'], as_index=False)['数量'].sum()
-            order_week = pd.merge(order_week, week_count, on=['weekday'], how='left')
-            order_week.loc[order_week['count'] != 0, '数量'] = order_week['数量'] / order_week['count']
-            order_week.loc[order_week['count'] == 0, '数量'] = 0
-            order_week1 = order_week[order_week['weekday'] != 'Sun']
-            order_week1 = order_week1.groupby(['現法コード', 'weekday'])['数量'].sum()
-            order_week1 = order_week1.groupby(['現法コード']).transform(qtyave)
-            order_week2 = order_week.groupby(['現法コード', 'weekday'])['数量'].sum()
-            order_week2 = order_week2.groupby(['現法コード']).transform(qtyave)
-            order_week1 = order_week1.reset_index()
-            order_week2 = order_week2.reset_index()
-            order_week2 = order_week2[order_week2['weekday'] == 'Sun']
-            order_week1 = order_week1.append(order_week2, sort=False)
-            order_week1 = order_week1.rename(columns={'数量': 'week_ratio'})
+                # 曜日指数計算
+                # 日付毎に数量を集計
+                # 大口を除く
+                order_small = order_sup[order_sup['アンフィット種別'] == '0']
+                order_day = order_small.groupby(['現法コード', 'weekday', '受注日'], as_index=False)['数量'].sum()
+                order_week = order_day.groupby(['現法コード', 'weekday'], as_index=False)['数量'].sum()
+                order_week = pd.merge(order_week, week_count, on=['weekday'], how='left')
+                order_week.loc[order_week['count'] != 0, '数量'] = order_week['数量'] / order_week['count']
+                order_week.loc[order_week['count'] == 0, '数量'] = 0
+                order_week1 = order_week[order_week['weekday'] != 'Sun']
+                order_week1 = order_week1.groupby(['現法コード', 'weekday'])['数量'].sum()
+                order_week1 = order_week1.groupby(['現法コード']).transform(qtyave)
+                order_week2 = order_week.groupby(['現法コード', 'weekday'])['数量'].sum()
+                order_week2 = order_week2.groupby(['現法コード']).transform(qtyave)
+                order_week1 = order_week1.reset_index()
+                order_week2 = order_week2.reset_index()
+                order_week2 = order_week2[order_week2['weekday'] == 'Sun']
+                order_week1 = order_week1.append(order_week2, sort=False)
+                order_week1 = order_week1.rename(columns={'数量': 'week_ratio'})
 
-            # 現法、曜日、納期属性の箱を用意
-            base_sh = pd.read_csv(local_pass + 'base_sh.csv', encoding=font, index_col=None, dtype={'数量': int, '納期属性': int})
+                # 現法、曜日、納期属性の箱を用意
+                base_sh = pd.read_csv(local_pass + 'base_sh.csv', encoding=font, index_col=None,
+                                      dtype={'数量': int, '納期属性': int})
 
-            # 現法、曜日、納期属性毎の数量を合計
-            order_A = order[order['アンフィット種別'] == '0']  # 大口を除く
-            order_A = order_A.groupby(['現法コード', 'weekday', '納期属性'])['数量'].sum()
-            order_A = order_A.groupby(['現法コード', 'weekday']).transform(qtyratio)
-            order_A = order_A.reset_index()
+                # 現法、曜日、納期属性毎の数量を合計
+                order_A = order_sup[order_sup['アンフィット種別'] == '0']  # 大口を除く
+                order_A = order_A.groupby(['現法コード', 'weekday', '納期属性'])['数量'].sum()
+                order_A = order_A.groupby(['現法コード', 'weekday']).transform(qtyratio)
+                order_A = order_A.reset_index()
 
-            # base_shと結合し0を補足
-            base_sh = pd.merge(base_sh, order_A, on=['現法コード', 'weekday', '納期属性'], how='outer')
-            base_sh.loc[base_sh['数量_y'].notnull(), '数量_x'] = base_sh['数量_y']
-            base_sh = base_sh.rename(columns={'数量_x': '数量'})
-            base_sh.drop(['数量_y'], axis=1, inplace=True)
-            base_sh = base_sh.round({'数量': 4})
-            base_sh = base_sh.rename(columns={'数量': 'n_ratio'})
+                # base_shと結合し0を補足
+                base_sh = pd.merge(base_sh, order_A, on=['現法コード', 'weekday', '納期属性'], how='outer')
+                base_sh.loc[base_sh['数量_y'].notnull(), '数量_x'] = base_sh['数量_y']
+                base_sh = base_sh.rename(columns={'数量_x': '数量'})
+                base_sh.drop(['数量_y'], axis=1, inplace=True)
+                base_sh = base_sh.round({'数量': 4})
+                base_sh = base_sh.rename(columns={'数量': 'n_ratio'})
 
-            # 小口比率を計算
-            small_ratio = order.groupby(['現法コード'], as_index=False)['数量'].sum()
-            small_ratio_A = order[order['アンフィット種別'] == '0']  # 大口を除く
-            small_ratio_A = small_ratio_A.groupby(['現法コード'], as_index=False)['数量'].sum()
-            small_ratio = pd.merge(small_ratio_A, small_ratio, on=['現法コード'], how='right')
-            small_ratio.loc[small_ratio['数量_x'].isnull(), '数量_x'] = 0
-            small_ratio['small_ratio'] = small_ratio['数量_x'] / small_ratio['数量_y']
-            small_ratio.drop(['数量_x', '数量_y'], axis=1, inplace=True)
+                # 小口比率を計算
+                small_ratio = order_sup.groupby(['現法コード'], as_index=False)['数量'].sum()
+                small_ratio_A = order_sup[order_sup['アンフィット種別'] == '0']  # 大口を除く
+                small_ratio_A = small_ratio_A.groupby(['現法コード'], as_index=False)['数量'].sum()
+                small_ratio = pd.merge(small_ratio_A, small_ratio, on=['現法コード'], how='right')
+                small_ratio.loc[small_ratio['数量_x'].isnull(), '数量_x'] = 0
+                small_ratio['small_ratio'] = small_ratio['数量_x'] / small_ratio['数量_y']
+                small_ratio.drop(['数量_x', '数量_y'], axis=1, inplace=True)
 
-            # 開始日終了日をdate形式に
-            Pre_S = dt.datetime.strptime(Pre_S, '%Y%m%d')
-            Pre_E = dt.datetime.strptime(Pre_E, '%Y%m%d')
+                # 開始日終了日をdate形式に
+                Pre_S = dt.datetime.strptime(Pre_S, '%Y%m%d')
+                Pre_E = dt.datetime.strptime(Pre_E, '%Y%m%d')
 
-            # 受注日のリストを作成
-            day_list = [Pre_S]
-            day_n = Pre_S
-            while day_n <= Pre_E:
-                day_list.append(day_n)
-                day_n = day_n + datetime.timedelta(days=1)
-                # prediction = pd.date_range(start=Pre_S, end=Pre_E, freq='D', name='受注日')
-                # prediction = prediction.to_series()
-                # prediction = pd.DataFrame(prediction)
-            # 受注日*出荷日のリストを作成
-            so_day_list = []
-            sd_day_list = []
-            noukizokusei = list(range(73))
-            noukizokusei_list = []
-            for nouki in range(len(day_list)):
-                noworkday_count = 0
-                for n in range(73):
-                    so_day_list.append(day_list[nouki])
-                    noukizokusei_list.append(n)
-                    sd_day = day_list[nouki] + datetime.timedelta(days=(n + noworkday_count))
-                    # 出荷日稼働flgを作成し非稼働日なら+1する
-                    while sd_day.strftime('%Y-%m-%d') in calendar_dict[pg_name]:
-                        sd_day = sd_day + dt.timedelta(days=1)
-                        noworkday_count = noworkday_count + 1
-                    sd_day_list.append(sd_day)
+                # 受注日のリストを作成
+                day_list = [Pre_S]
+                day_n = Pre_S
+                while day_n <= Pre_E:
+                    day_list.append(day_n)
+                    day_n = day_n + datetime.timedelta(days=1)
+                    # prediction = pd.date_range(start=Pre_S, end=Pre_E, freq='D', name='受注日')
+                    # prediction = prediction.to_series()
+                    # prediction = pd.DataFrame(prediction)
+                # 受注日*出荷日のリストを作成
+                so_day_list = []
+                sd_day_list = []
+                # noukizokusei = list(range(73))
+                noukizokusei_list = []
+                for nouki in range(len(day_list)):
+                    noworkday_count = 0
+                    for n in range(73):
+                        so_day_list.append(day_list[nouki])
+                        noukizokusei_list.append(n)
+                        sd_day = day_list[nouki] + datetime.timedelta(days=(n + noworkday_count))
+                        # 出荷日稼働flgを作成し非稼働日なら+1する
+                        while sd_day.strftime('%Y-%m-%d') in calendar_dict[pg_name]:
+                            sd_day = sd_day + dt.timedelta(days=1)
+                            noworkday_count = noworkday_count + 1
+                        sd_day_list.append(sd_day)
 
-            # マルチプロセス処理の結果を入れるdfを作成
-            prediction_sum = pd.DataFrame({'現法コード': [], '受注日': [], '受注日稼働flg': [], '出荷日': [], '出荷日稼働flg': [], '納期属性': []})
-            # 現法毎にマルチプロセスで処理
-            pool = Pool(multi.cpu_count() - 2)
-            list1 = [(x, so_day_list, sd_day_list, noukizokusei_list, calendar_dict, sub_name) for x in range(14)]
-            pre_list = pool.map(wrapper, list1)
-            pool.close()
-
-            # 返り値がlist形式で格納しされるのでfor文で結合
-            for x in range(14):
-                prediction_sum = prediction_sum.append(pre_list[x], sort=False)
-
-            # 受注曜日カラムを追加
-            prediction = prediction_sum
-            prediction['weekday'] = [x.strftime('%a') for x in prediction['受注日']]
-
-            '''
-            # 受注日をDatetimeIndexとし年、月、曜日のindexを追加
-            prediction = prediction.set_index('受注日')
-            prediction = prediction.set_index([prediction.index.year, prediction.index.month, prediction.index])
-            prediction.index.names = ['year_so', 'month_so', '受注日']
-            prediction = prediction.reset_index()
-            '''
-            # 出荷日をDatetimeIndexとし年、月、曜日のindexを追加
-            prediction = prediction.set_index('出荷日')
-            prediction = prediction.set_index([prediction.index.year, prediction.index.month, prediction.index])
-            prediction.index.names = ['year', 'month', '出荷日']
-            prediction = prediction.reset_index()
-
-            # FCを結合
-            prediction = pd.merge(prediction, FC, on=['現法コード', 'year', 'month'], how='left')
-            # 曜日比率を結合
-            prediction = pd.merge(prediction, order_week1, on=['現法コード', 'weekday'], how='left')
-            # 納期属性を結合
-            prediction = pd.merge(prediction, base_sh, on=['現法コード', 'weekday', '納期属性'], how='left')
-            # 小口比率を追加
-            prediction = pd.merge(prediction, small_ratio, on=['現法コード'], how='left')
-            # ブランクを0で埋める
-            prediction.loc[prediction['月平均本数'].isnull(), '月平均本数'] = 0
-            prediction.loc[prediction['week_ratio'].isnull(), 'week_ratio'] = 0
-
-            # 現法毎日当たり数量を算出
-            prediction['数量'] = prediction['受注日稼働flg'] * prediction['出荷日稼働flg'] * prediction['月平均本数'] * prediction[
-                'week_ratio'] * prediction['n_ratio'] * prediction['small_ratio']
-            prediction = prediction.round({'数量': 3})
-
-            # 受注日と出荷日毎のデータを出力
-            f_name = pg_name + '_prediction_row.tsv'
-            prediction.to_csv(local_pass + f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n', index=False)
-
-            # 受注日*出荷日毎の数量を合計 日付の型をあとで修正
-            prediction = prediction.groupby(['受注日', '出荷日'], as_index=False)['数量'].sum()
-            prediction['受注日'] = pd.to_datetime(prediction['受注日'])
-
-            q, mod = divmod(((Pre_E - Pre_S).days + 1), 20)
-            FACILITY_DICT = {}
-            FACILITY_DICT['0143'] = ['MJP', '0143', 'AIO']
-            FACILITY_DICT['7017'] = ['MJP', '7017', 'MAL']
-            FACILITY_DICT['3764'] = ['MJP', '3764', 'AAL']
-            FACILITY_DICT['0FCN'] = ['CHN', '0FCN', 'FAL']
-            FACILITY_DICT['0AIO'] = ['CHN', '0AIO', 'F2A']
-            FACILITY_DICT['SPCM'] = ['VNM', 'SPCM', 'SAL']
-
-            FACILITY_L = FACILITY_DICT[pg_name]
-
-            # ■受注予測(d)　対象日から見た予測数量積み上げ分
-            # マルチプロセス対応 マルチプロセス回数は20回とする
-            pre_c = pd.DataFrame({'BASE_DATE': [], 'BASE_DATE_ADD_DAYS': [], 'PREDICTION_QUANTITY': []})
-            pre_c = pre_c.astype({'BASE_DATE_ADD_DAYS': int, 'PREDICTION_QUANTITY': float})
-            # q*20パート
-            for s in range(0, q):
+                # マルチプロセス処理の結果を入れるdfを作成
+                prediction_sum = pd.DataFrame(
+                    {'現法コード': [], '受注日': [], '受注日稼働flg': [], '出荷日': [], '出荷日稼働flg': [], '納期属性': []})
+                # 現法毎にマルチプロセスで処理
                 pool = Pool(multi.cpu_count() - 2)
-                list3 = [(d, Pre_S, prediction) for d in range((20 * s), (20 * s + 20))]
-                prediction_sum3 = pool.map(wrapper3, list3)
+                list1 = [(x, so_day_list, sd_day_list, noukizokusei_list, calendar_dict, sub_name) for x in range(14)]
+                pre_list = pool.map(wrapper, list1)
                 pool.close()
-                for d in range(0, 20):
-                    pre_c = pre_c.append(prediction_sum3[d], sort=False)
-            # modパート
-            pool = Pool(multi.cpu_count() - 2)
-            list3 = [(d, Pre_S, prediction) for d in range((20 * q), (20 * q + mod))]
-            prediction_sum4 = pool.map(wrapper3, list3)
-            pool.close()
-            for d in range(0, mod):
-                pre_c = pre_c.append(prediction_sum4[d], sort=False)
 
-            pre_c.reset_index(drop=True, inplace=True)
+                # 返り値がlist形式で格納しされるのでfor文で結合
+                for x in range(14):
+                    prediction_sum = prediction_sum.append(pre_list[x], sort=False)
 
-            Today = "'" + dt.datetime.today().strftime("%Y-%m-%d") + "'"
-            pre_c.loc[:, 'SUBSIDIARY_CD'] = FACILITY_L[0]
-            pre_c.loc[:, 'SUPPLIER_CD'] = FACILITY_L[1]
-            pre_c.loc[:, 'FACILITY_CD'] = FACILITY_L[2]
-            pre_c.loc[:, 'UPD_COUNT'] = '0'
-            pre_c.loc[:, 'DEL_FLG'] = '0'
-            pre_c.loc[:, 'REG_USR'] = None
-            pre_c.loc[:, 'REG_TIME'] = Today
-            pre_c.loc[:, 'UPD_USR'] = None
-            pre_c.loc[:, 'UPD_TIME'] = Today
+                # 受注曜日カラムを追加
+                prediction = prediction_sum
+                prediction['weekday'] = [x.strftime('%a') for x in prediction['受注日']]
 
-            prediction = pre_c
-            prediction = prediction.loc[:,
-                         ['SUBSIDIARY_CD', 'SUPPLIER_CD', 'FACILITY_CD', 'BASE_DATE', 'BASE_DATE_ADD_DAYS',
-                          'PREDICTION_QUANTITY', 'UPD_COUNT', 'DEL_FLG', 'REG_USR', 'REG_TIME', 'UPD_USR', 'UPD_TIME']]
+                '''
+                # 受注日をDatetimeIndexとし年、月、曜日のindexを追加
+                prediction = prediction.set_index('受注日')
+                prediction = prediction.set_index([prediction.index.year, prediction.index.month, prediction.index])
+                prediction.index.names = ['year_so', 'month_so', '受注日']
+                prediction = prediction.reset_index()
+                '''
+                # 出荷日をDatetimeIndexとし年、月、曜日のindexを追加
+                prediction = prediction.set_index('出荷日')
+                prediction = prediction.set_index([prediction.index.year, prediction.index.month, prediction.index])
+                prediction.index.names = ['year', 'month', '出荷日']
+                prediction = prediction.reset_index()
 
-            '''
-            # FACILITY_CD_ratioを読み込み、他の設備の予測も作成する
-            FACI_r = pd.read_csv('FACILITY_CD_ratio.tsv', sep='\t', encoding=font, dtype=object, engine='python', error_bad_lines=False)
-            FACI_r = FACI_r.astype({'ratio': float})
-            prediction = pd.merge(prediction, FACI_r, on=['SUBSIDIARY_CD', 'SUPPLIER_CD'], how='left')
-            prediction['PREDICTION_QUANTITY'] = (prediction['PREDICTION_QUANTITY'] * prediction['ratio']).round(2)
-            prediction.drop(['FACILITY_CD_AL', 'ratio'], axis=1, inplace=True)
-            prediction = prediction.loc[:,['SUBSIDIARY_CD', 'SUPPLIER_CD', 'FACILITY_CD', 'BASE_DATE', 'BASE_DATE_ADD_DAYS', 'PREDICTION_QUANTITY', 'UPD_COUNT', 'DEL_FLG', 'REG_USR', 'REG_TIME', 'UPD_USR', 'UPD_TIME']]
-            '''
+                # FCを結合
+                prediction = pd.merge(prediction, FC, on=['現法コード', 'year', 'month'], how='left')
+                # 曜日比率を結合
+                prediction = pd.merge(prediction, order_week1, on=['現法コード', 'weekday'], how='left')
+                # 納期属性を結合
+                prediction = pd.merge(prediction, base_sh, on=['現法コード', 'weekday', '納期属性'], how='left')
+                # 小口比率を追加
+                prediction = pd.merge(prediction, small_ratio, on=['現法コード'], how='left')
+                # ブランクを0で埋める
+                prediction.loc[prediction['月平均本数'].isnull(), '月平均本数'] = 0
+                prediction.loc[prediction['week_ratio'].isnull(), 'week_ratio'] = 0
 
-            # ファイルアウトプット
-            prediction = prediction.round({'PREDICTION_QUANTITY': 3})
+                # 現法毎日当たり数量を算出
+                prediction['数量'] = prediction['受注日稼働flg'] * prediction['出荷日稼働flg'] * prediction['月平均本数'] * prediction[
+                    'week_ratio'] * prediction['n_ratio'] * prediction['small_ratio']
+                prediction = prediction.round({'数量': 3})
 
-            f_name = pg_name + '_prediction.tsv'
-            prediction.to_csv(local_pass + f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n', index=False)
+                # 受注日と出荷日毎のデータを出力
+                f_name = pg_name + '_prediction_row.tsv'
+                prediction.to_csv(local_pass + f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n',
+                                  index=False)
 
-            # 時間を表示
-            dt_now = datetime.datetime.now()
-            print(dt_now)
+                # 受注日*出荷日毎の数量を合計 日付の型をあとで修正
+                prediction = prediction.groupby(['受注日', '出荷日'], as_index=False)['数量'].sum()
+                prediction['受注日'] = pd.to_datetime(prediction['受注日'])
 
-            print('受注予測作成 Finish!')
-        else:
-            print('受注予測作成 Finish 該当する実績データがありません！')
+                q, mod = divmod(((Pre_E - Pre_S).days + 1), 20)
+                FACILITY_DICT = {}
+                FACILITY_DICT['0143'] = ['MJP', '0143', 'AIO']
+                FACILITY_DICT['7017'] = ['MJP', '7017', 'MAL']
+                FACILITY_DICT['3764'] = ['MJP', '3764', 'AAL']
+                FACILITY_DICT['0FCN'] = ['CHN', '0FCN', 'FAL']
+                FACILITY_DICT['0AIO'] = ['CHN', '0AIO', 'F2A']
+                FACILITY_DICT['SPCM'] = ['VNM', 'SPCM', 'SAL']
+
+                FACILITY_L = FACILITY_DICT[pg_name]
+
+                # ■受注予測(d)　対象日から見た予測数量積み上げ分
+                # マルチプロセス対応 マルチプロセス回数は20回とする
+                pre_c = pd.DataFrame({'BASE_DATE': [], 'BASE_DATE_ADD_DAYS': [], 'PREDICTION_QUANTITY': []})
+                pre_c = pre_c.astype({'BASE_DATE_ADD_DAYS': int, 'PREDICTION_QUANTITY': float})
+                # q*20パート
+                for s in range(0, q):
+                    pool = Pool(multi.cpu_count() - 2)
+                    list3 = [(d, Pre_S, prediction) for d in range((20 * s), (20 * s + 20))]
+                    prediction_sum3 = pool.map(wrapper3, list3)
+                    pool.close()
+                    for d in range(0, 20):
+                        pre_c = pre_c.append(prediction_sum3[d], sort=False)
+                # modパート
+                pool = Pool(multi.cpu_count() - 2)
+                list3 = [(d, Pre_S, prediction) for d in range((20 * q), (20 * q + mod))]
+                prediction_sum4 = pool.map(wrapper3, list3)
+                pool.close()
+                for d in range(0, mod):
+                    pre_c = pre_c.append(prediction_sum4[d], sort=False)
+
+                pre_c.reset_index(drop=True, inplace=True)
+
+                pre_c.loc[:, 'SUBSIDIARY_CD'] = FACILITY_L[0]
+                pre_c.loc[:, 'SUPPLIER_CD'] = FACILITY_L[1]
+                pre_c.loc[:, 'FACILITY_CD'] = FACILITY_L[2]
+
+                prediction_all = prediction_all.append(pre_c, sort=False)
+            else:
+                print(pg_name + 'に該当する実績データがありません！')
+
+        # ファイルアウトプット
+        Today = "'" + dt.datetime.today().strftime("%Y-%m-%d") + "'"
+        prediction_all = prediction_all.round({'PREDICTION_QUANTITY': 3})
+        prediction_all.loc[:, 'UPD_COUNT'] = '0'
+        prediction_all.loc[:, 'DEL_FLG'] = '0'
+        prediction_all.loc[:, 'REG_USR'] = fc_cd
+        prediction_all.loc[:, 'REG_TIME'] = Today
+        prediction_all.loc[:, 'UPD_USR'] = fc_cd
+        prediction_all.loc[:, 'UPD_TIME'] = Today
+
+        f_name = 'est_' + fc_cd + '.tsv'
+        prediction_all.to_csv(local_pass + f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n',
+                          index=False)
+
+        print('FC_' + fc_cd + 'を元に' + f_name + 'を作成しました!')
+
+        print('受注予測作成完了しました!')
+
 
 if __name__ == '__main__':
     Orders_prediction()
