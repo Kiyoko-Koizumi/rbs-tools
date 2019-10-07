@@ -4,6 +4,7 @@ import numpy as np
 import Header
 import Type
 import datetime
+import openpyxl
 print(datetime.datetime.now())
 
 path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
@@ -17,11 +18,13 @@ dfe = pd.DataFrame()
 dfo = pd.DataFrame()
 dfp = pd.DataFrame()
 for i in range(0, 8):   # err除く
-    df['err_'+ str(i)] = df['err_' + str(i)].astype(float)
+    df['err_' + str(i)] = df['err_' + str(i)].astype(float)
 
 dfe = df.query('err_0 != 1 and err_1 == 1 or err_2 == 1 or err_3 == 1 or err_4 == 1 or err_5 == 1 or err_6 == 1 or err_7 == 1 or err_8 == 1')    # err データ over除く
 dfo = df.query('err_0 == 1')    # over err データ
 df = df.query('err_0 != 1 and err_1 != 1 and err_2 != 1 and err_3 != 1 and err_4 != 1 and err_5 != 1 and err_6 != 1 and err_7 != 1 and err_8 !=1')  # errなし
+dfn = (df[['Subsidiary Code', 'Product Code']])
+dfn.to_csv(path + 'temp_data/non_err_Product.txt', sep='\t', encoding='utf_16', index=False)  # errなしProductCode
 
 col = list(df.columns)  # Product_Slideのカラム名
 col2 = list(Header.Header())    # Headerのカラム名
@@ -42,6 +45,7 @@ dfp = p[['Subsidiary Code', 'Product Code', 'Production LT', 'Min Qty of Big Ord
 
 # 現法毎にファイル出力
 sub = list(set(df2['Subsidiary Code'])) # 現法コードをリストにセット　重複除く
+
 df3 = pd.DataFrame()
 err = pd.DataFrame()
 over = pd.DataFrame()
@@ -58,11 +62,7 @@ for i in range(0, len(sub)):
     df3.to_csv(path + 'Update_txt/' + sub[i] + '_Product.txt', sep='\t', encoding='utf_16', index=False)  # Product Master 現法毎に出力　フォルダ「Update_txt」
 
     df3 = df3.astype(Type.type())   # 検証用
-    df3.fillna('', inplace=True)  # 検証用　←だめ fillna(method='ffill')
-    #df3 = df3.replace(np.nan, '', regex=True)　←だめ
-
-    #writer = pd.ExcelWriter(path + 'Update_txt/' + sub[i] + '_Product.xlsx', engine='xlsxwriter')　　←だめ　なぜか？出力されない
-    #df3.to_excel(writer, sheet_name='Product', na_rep='', index=False)  　　←だめ　なぜか？出力されない
+    df3 = df3.replace('nan', '')
     df3.to_excel(path + 'Update_txt/' + sub[i] + '_Product.xlsx', na_rep='', index=False)  # 検証用
     print(sub[i])
 
@@ -70,7 +70,7 @@ for i in range(0, len(sub)):
         err = err.append(h, sort=False)
         err = err.append(dfe.loc[dfe['Subsidiary Code'] == sub[i]], sort=False)
         err = err.astype(Type.type())
-        err.fillna('', inplace=True)  # nanを空白に置き換え
+        err = err.replace('nan', '')    # 文字列の「nan」を空白に置き換え ★mergeやqueryを使うと文字列のnanになることがある
         #err = err.replace(np.nan, '', regex=True)
         err = err.reindex(columns=err_h)
 
@@ -88,21 +88,19 @@ for i in range(0, len(sub)):
         over = over.append(dfo.loc[dfo['Subsidiary Code'] == sub[i]], sort=False)  # Over_Listシート
         over = pd.merge(dfp, dfo, on=['Subsidiary Code', 'Product Code'], how='inner')
         over = over.drop(['err_0', 'err_1', 'err_2', 'err_3', 'err_4', 'err_5', 'err_6', 'err_7', 'err_8', 'err_8_C'], axis=1)
-        print(over.columns)
+
         for f in range(2, len(over.columns)):   # Over_Listの型変更　現法コード・商品コード以外をfloat
             over[over.columns[f]] = over[over.columns[f]].astype(float)
         dfo = pd.merge(p, dfo, on=('Subsidiary Code', 'Product Code'), how='inner')  # Productシート
-
         overp = overp.append(h, sort=False)
         overp = overp.append(dfo.loc[dfo['Subsidiary Code'] == sub[i]], sort=False)
-        overp = overp.fillna('', inplace=True)    # nanを空白に置き換え
-        #overp = overp.replace(np.nan, '', regex=True)
         overp = overp.reindex(columns=err_h)
         overp = overp.astype(Type.type())
+        overp = overp.replace('nan', '')    # 文字列の「nan」を空白に置き換え ★mergeやqueryを使うと文字列のnanになることがある
 
         with pd.ExcelWriter(path + 'Err_Excel/' + sub[i] + '_over_Product.xlsx') as writer:
-            over.to_excel(writer, sheet_name='Over_List', na_rep='', index=False)
-            overp.to_excel(writer, sheet_name='Product', na_rep='', index=False)
+            over.to_excel(writer, sheet_name='Over_List', index=False)
+            overp.to_excel(writer, sheet_name='Product', index=False)
 
             workbook = writer.book
             fmt = workbook.add_format({'bold': False, 'border': 0})

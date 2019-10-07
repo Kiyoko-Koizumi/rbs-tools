@@ -10,9 +10,10 @@ print(datetime.datetime.now())
 # ProductMasterのNew_SlideデータとSlide_Noデータ
 new_slide = pd.DataFrame(pd.read_csv(path + 'temp_data/New_Slide.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
 slide_no = pd.DataFrame(pd.read_csv(path + 'temp_data/SZ_Slide.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
+non_err = pd.DataFrame(pd.read_csv(path + 'temp_data/non_err_Product.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
 slide_no = (slide_no.rename(columns={'Unit Price Check': 'u_check'}))
 slide_no['new_slide_no'] = slide_no['new_slide_no'].astype(int)
-u_check = pd.DataFrame()
+u_check = pd.DataFrame(pd.merge(slide_no, non_err))
 u_check = slide_no.query('u_check != "0" and new_slide_no < 11')   # 商品マスタの「Unit Price Check」<>0 and OverSlide除く　対象Product
 z_new_no = u_check[['Subsidiary Code', 'Product Code', 'new_slide_no', 'slide_no']]
 s_new_no = u_check[['Subsidiary Code', 'Product Code', 'new_slide_no', 'spc_slide_no']]
@@ -51,14 +52,14 @@ for l in range(0, n):
 # 「temp_data」フォルダに作成
 spc_slide['purchase'] = spc_slide['purchase'].astype(float)
 spc_slide['Min.Val.1'] = spc_slide['Min.Val.1'].astype(float)
-spc_slide = (spc_slide.query('purchase > 0'))  # 仕入単価>0で抽出
+#spc_slide = (spc_slide.query('purchase > 0'))  # 仕入単価>0で抽出　Accessは条件つけていない
 spc_slide = spc_slide.sort_values(by=['Subsidiary Code', 'Product Code', 'Min.Val.1'])
 spc_slide = pd.merge(s_new_no, spc_slide, how='left')   # new_slide_no 追加
 spc_slide.to_csv(path + 'temp_data/SPC_U_Slide.txt', sep='\t', encoding='utf_16', index=False)    # SPC_U_Slide.txt スライドデータのみ出力
 
 spc_data1 = spc_data1.rename(columns={'Subsidiary Code_x': 'Subsidiary Code'})
 spc_data1.drop(columns=['Subsidiary Code_y'], inplace=True)    # 不要な列を削除
-spc_data1.drop_duplicates(subset=['Product Code', 'Min.Val.1'], keep='first', inplace=True)  # 重複データ削除　先頭行残す
+#spc_data1.drop_duplicates(subset=['Product Code', 'Min.Val.1'], keep='first', inplace=True)  # 重複データ削除　先頭行残す   Accessは削除していない
 spc_data1['Process Mode'] = '2'
 spc_data1['Master ID'] = '02'
 spc_data1.to_csv(path + 'temp_data/SPC_U_Product.txt', sep='\t', encoding='utf_16', index=False)  # SPC_U_Product.txt　ALL出力
@@ -98,14 +99,14 @@ h_product.to_csv(path + 'temp_data/h_U_Product.txt', sep='\t', encoding='utf_16'
 # 「temp_data」フォルダに作成
 z_slide['sales'] = z_slide['sales'].astype(float)
 z_slide['Min.Val.1'] = z_slide['Min.Val.1'].astype(float)
-z_slide = (z_slide.query('sales > 0'))  # 売単価>0で抽出
+#z_slide = (z_slide.query('sales > 0'))  # 売単価>0で抽出　Accessは条件つけていない
 z_slide = z_slide.sort_values(by=['Subsidiary Code', 'Product Code', 'Min.Val.1'])
 z_slide = pd.merge(z_new_no, z_slide, how='left')   # new_slide_no 追加
 z_slide.to_csv(path + 'temp_data/Zetta_U_Slide.txt', sep='\t', encoding='utf_16', index=False)    # Zetta_U_Slide.txt スライドデータのみ出力
 
 z_data1['Process Mode'] = '2'
 z_data1['Master ID'] = '02'
-z_data1.drop_duplicates(subset=['Subsidiary Code', 'Product Code', 'Min.Val.1'], keep='first', inplace=True)  # 重複データ削除　先頭行残す
+#z_data1.drop_duplicates(subset=['Subsidiary Code', 'Product Code', 'Min.Val.1'], keep='first', inplace=True)  # 重複データ削除　先頭行残す　Accessは削除していない
 z_data1.to_csv(path + 'temp_data/Zetta_U_Product.txt', sep='\t', encoding='utf_16', index=False)  # Zetta_U_Product.txt　ALL出力
 
 print('Fin')
