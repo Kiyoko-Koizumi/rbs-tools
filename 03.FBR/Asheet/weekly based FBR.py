@@ -28,25 +28,6 @@ def check_wq(list_f):
                 st.close()
                 list_f[i] = f_pass + '/' + f_name
 
-# カンマ置き換え
-def check_cl(list_f):
-    for j in range(0,len(list_f)):
-        f_name = os.path.basename(list_f[j])
-        f_pass = os.path.dirname(list_f[j])
-        os.chdir(f_pass)
-        with open(f_name, 'r', encoding=font) as f:
-            file = f.read()
-            if ',' in file:
-                print(f_name + 'にダブルクォーテーション、カンマが含まれるため置き換えて新規に保存します')
-                file = file.replace(',', '')
-                f_name = 'new_' + f_name
-                st = open(f_name, 'w', encoding=font)
-                st.write(file)
-                st.close()
-                list_f[j] = f_pass + '/' + f_name
-
-
-
 
 #ファイル選択
 def read_data():
@@ -56,7 +37,7 @@ def read_data():
     root.withdraw()
     fTyp = [("", "*")]
     iDir = os.path.abspath(os.path.dirname(__file__))
-    tkinter.messagebox.showinfo('ファイル選択', '③FBR需給一覧(SD-33371)_モニター用.xlsxを選択してください')
+    tkinter.messagebox.showinfo('ファイル選択', '[③FBR需給一覧(SD-33371)_モニター用.xlsx] を選択してください')
     # データの取得
     # ここの1行を変更 askopenfilename → askopenfilenames
     file = tkinter.filedialog.askopenfilenames(filetypes=fTyp, initialdir=iDir)
@@ -64,9 +45,6 @@ def read_data():
     # 選択ファイルリスト作成
     list_f = list(file)
 
-    #"と,置き換え
-    #check_wq(list_f)
-    #check_cl(list_f)
 
     # 1つ目のファイルを開く
     f_name = os.path.basename(list_f[0])
@@ -75,6 +53,10 @@ def read_data():
 
     # ファイルを開く
     order = pd.read_excel(f_name, dtype=object)
+
+    #"と,置き換え
+    #check_wq(list_f)
+
     
     return order
 
@@ -114,9 +96,11 @@ if __name__ == '__main__':
 
     # ③FBR需給一覧(SD-33371)_モニター用を読み込む
     FBR = read_data()
-
+    #カンマを取る
+    FBR = FBR.apply(lambda x: x.str.replace(',', ''))
     # NULL値を0に置換
     FBR = FBR.fillna(0.0)
+
     #FBRデータの中に日付、YEAR、MONTHを作成(YEAR MONTHはKEYとして利用するため)
     FBR.loc[:, '日付'] = pd.to_datetime((FBR['日付 の年、月'] + '1日'), format='%Y年%m月%d日')
     FBR['YEAR'] = FBR['日付'].dt.year
@@ -266,9 +250,9 @@ if __name__ == '__main__':
                 '生産能力（投資済）不足分　']]
 
      # ファイルアウトプット
-    f_name = '③FBR需給一覧(SD-33371)_モニター用.tsv'
-    FBR_SUM.to_csv(f_name, sep='\t', encoding=font, index=False)
-    print('DONE!')
+     f_name = '③FBR需給一覧(SD-33371)_モニター用.tsv'
+     FBR_SUM.to_csv(f_name, sep='\t', encoding=font, index=False)
+     print('DONE!')
 
 
 
