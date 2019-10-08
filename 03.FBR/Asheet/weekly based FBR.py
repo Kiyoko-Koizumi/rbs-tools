@@ -206,7 +206,8 @@ calendar = pd.merge(fixed_calendar, SP_name, on=['Supplier'], how='left')
 
 
 #FBRと結合するために、データ型を揃える
-calendar = calendar.loc[:, ['日付_y', '稼働日数', '管理Gr']]
+calendar = calendar.loc[:, ['日付', '稼働日', '管理Gr']]
+calendar.rename(columns={'日付': '日付_y'})
 calendar['日付_y'] = calendar['日付_y'].astype(str)
 calendar['日付_y'] = calendar['日付_y'].str[:11]
 calendar['日付_y'] = pd.to_datetime(calendar['日付_y'], errors='coerce')
