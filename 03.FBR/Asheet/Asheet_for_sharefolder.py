@@ -93,6 +93,8 @@ FC_A.loc[:, '数量の合計'] = FC_A['数量の合計'] * FC_A['割合']
 FC_MJP = pd.merge(FC_MJP, inter_ratio, on=['CLASSIFY_CD', 'SUBSIDIARY_CD'], how='inner')
 FC_MJP = FC_MJP.astype({'比率': float, '数量の合計': float})
 FC_MJP.loc[:, '数量の合計'] = FC_MJP['数量の合計'] * FC_MJP['比率']
+FC_MJP.rename(columns={'SUBSIDIARY_CD': '現法'}, inplace=True)
+
 
 # # 確認用　その他のカラム名を区別
 # FC_A.loc[((FC_A['調達Gr'] == '現地調達') & (FC_A['管理Gr'] == 'その他')), '管理Gr'] = 'その他_現地調達'
@@ -109,6 +111,7 @@ FC_A = FC_A.append(FC_CHNKOR, sort=False)
 FC_A = FC_A.append(FC_SPCD, sort=False)
 
 # 数量の合計を集計する
+FC_A.reset_index(drop=True, inplace=True)
 FC_A = FC_A.groupby(['現法', '製造GR', '月', '管理Gr'], as_index=False)[['数量の合計']].sum()
 
 # 集計後補正値を加える
