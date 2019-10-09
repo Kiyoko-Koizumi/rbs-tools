@@ -11,6 +11,7 @@ from dateutil.relativedelta import relativedelta
 from multiprocessing import Pool
 import multiprocessing as multi
 import numpy as np
+import openpyxl
 
 # ダブルコーテーション置き換え
 def check_wq(list_f):
@@ -129,7 +130,6 @@ FBR['日付 の年、月'] = [x.strftime('%Y{0}%m{1}%d{2}').format(*'年月日')
 #不要な値をデータフレームから削除
 FBR = FBR.drop(['YEAR','MONTH','日付_x','flag','稼働日数'],axis=1)
 
-
 #カレンダーフォルダにデータがあるものの処理
 #Excelの読み込み、稼働日反映を行う
 # 変数の初期化
@@ -159,31 +159,31 @@ for root, dirs, files in os.walk(folder):
 
             #縦連結のために月ごとにDataFrameとしてsheetを読込、
                 df1 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[1, 4])
-                df1 = df1.rename(columns={'日': '日付','稼動':'稼働日'})
+                df1 = df1.rename(columns={'日': '日付_y','稼動':'稼働日数'})
                 df2 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[7, 10])
-                df2 = df2.rename(columns={'日.1': '日付','稼動.1':'稼働日'})
+                df2 = df2.rename(columns={'日.1': '日付_y','稼動.1':'稼働日数'})
                 df3 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[13,16])
-                df3 = df3.rename(columns={'日.2': '日付','稼動.2':'稼働日'})
+                df3 = df3.rename(columns={'日.2': '日付_y','稼動.2':'稼働日数'})
                 df4 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[19,22])
-                df4 = df4.rename(columns={'日.3': '日付','稼動.3':'稼働日'})
+                df4 = df4.rename(columns={'日.3': '日付_y','稼動.3':'稼働日数'})
                 df5 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[25,28])
-                df5 = df5.rename(columns={'日.4': '日付','稼動.4':'稼働日'})
+                df5 = df5.rename(columns={'日.4': '日付_y','稼動.4':'稼働日数'})
                 df6 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[31,34])
-                df6 = df6.rename(columns={'日.5': '日付','稼動.5':'稼働日'})
+                df6 = df6.rename(columns={'日.5': '日付_y','稼動.5':'稼働日数'})
                 df7 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[37,40])
-                df7 = df7.rename(columns={'日.6': '日付','稼動.6':'稼働日'})
+                df7 = df7.rename(columns={'日.6': '日付_y','稼動.6':'稼働日数'})
                 df8 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[43,46])
-                df8 = df8.rename(columns={'日.7': '日付','稼動.7':'稼働日'})
+                df8 = df8.rename(columns={'日.7': '日付_y','稼動.7':'稼働日数'})
                 df9 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[49,52])
-                df9 = df9.rename(columns={'日.8': '日付','稼動.8':'稼働日'})
+                df9 = df9.rename(columns={'日.8': '日付_y','稼動.8':'稼働日数'})
                 df10 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[55,58])
-                df10 = df10.rename(columns={'日.9': '日付','稼動.9':'稼働日'})
+                df10 = df10.rename(columns={'日.9': '日付_y','稼動.9':'稼働日数'})
                 df11= input_book.parse(input_sheet_name[0],skiprows=12, usecols=[13,16])
-                df11 = df11.rename(columns={'日.2': '日付','稼動.2':'稼働日'})
+                df11 = df11.rename(columns={'日.2': '日付_y','稼動.2':'稼働日数'})
                 df12 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[61,64])
-                df12 = df12.rename(columns={'日.10': '日付','稼動.10':'稼働日'})
+                df12 = df12.rename(columns={'日.10': '日付_y','稼動.10':'稼働日数'})
                 df13 = input_book.parse(input_sheet_name[0],skiprows=12, usecols=[67,70])
-                df13 = df13.rename(columns={'日.11': '日付','稼動.11':'稼働日'})
+                df13 = df13.rename(columns={'日.11': '日付_y','稼動.11':'稼働日数'})
 
                 vertical = pd.concat([df1, df2,df3, df4,df5, df6,df7, df8,df9, df10,df11, df12,df13])
                 for index, row in vertical.iterrows():
@@ -198,16 +198,14 @@ add_calendar = add_calendar[((add_calendar['Supplier'] == 'SPC') | (add_calendar
 add_calendar = add_calendar.replace({'SPC': 'SPCNew', 'FCN': 'J2FCN', '駿河阿見': 'J2駿河阿見', 'その他メーカー': 'J2その他'})
 
 fixed_calendar = pd.concat([calendar_all, add_calendar], sort=True)
-fixed_calendar = fixed_calendar.loc[:, ['稼働日','日付', 'Supplier' ]]
+fixed_calendar = fixed_calendar.loc[:, ['稼働日数','日付_y', 'Supplier' ]]
 # FBR帳票用サプライヤー名ファイルの読み込み
 SP_name = pd.read_csv('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/稼働日カレンダー/SP_name.csv', encoding='utf-8',dtype='object', index_col=None)
 #calendarのカラムを管理Grに揃える
 calendar = pd.merge(fixed_calendar, SP_name, on=['Supplier'], how='left')
 
-
 #FBRと結合するために、データ型を揃える
-calendar = calendar.loc[:, ['日付', '稼働日', '管理Gr']]
-calendar.rename(columns={'日付': '日付_y'})
+calendar = calendar.loc[:, ['日付_y', '稼働日数', '管理Gr']]
 calendar['日付_y'] = calendar['日付_y'].astype(str)
 calendar['日付_y'] = calendar['日付_y'].str[:11]
 calendar['日付_y'] = pd.to_datetime(calendar['日付_y'], errors='coerce')
@@ -242,9 +240,5 @@ FBR_SUM = FBR_SUM.loc[:,
                 '補正値（FCN売上対策）', '補正値（R.B.S）', '補正値（TENEO移管）', '補正値（メーカー握り）', '補正値（在庫先行発注）', '生産能力（実力値）不足分　',
                 '生産能力（投資済）不足分　']]
 
-# ファイルアウトプット
-f_name = '③FBR需給一覧(SD-33371)_モニター用.tsv'
-FBR_SUM.to_csv(f_name, sep='\t', encoding=font, index=False)
-print('DONE!')
-
-
+#ファイルアウトプット
+FBR_SUM.to_excel('③FBR需給一覧(SD-33371)_モニター用_日次.xlsx' , index=False)
