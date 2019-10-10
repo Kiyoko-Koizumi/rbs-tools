@@ -227,5 +227,5 @@ FBR_SUM = FBR_SUM.loc[:,
 
 
 #ファイルアウトプット
-FBR_SUM.to_excel('③FBR需給一覧(SD-33371)_モニター用_日次.xlsx' , index=False)
+FBR_SUM.to_excel('③FBR需給一覧(SD-33371)_モニター用.xlsx' , index=False)
 print('DONE!!')
