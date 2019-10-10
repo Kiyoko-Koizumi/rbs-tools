@@ -21,12 +21,15 @@ def read_so():
     # ファイル選択ダイアログの表示
     root = tkinter.Tk()
     root.withdraw()
+
+    tkinter.messagebox.showinfo('Orders_creation_no_change_date', '元となるデータとFCデータを選んでください！')
+
     fTyp = [("", "*")]
     iDir = os.path.abspath(os.path.dirname(__file__))
 
     # 受注実績データの取得
     # ここの1行を変更 askopenfilename → askopenfilenames
-    file = tkinter.filedialog.askopenfilenames(filetypes=fTyp, initialdir=iDir, title='受注実績データの取得')
+    file = tkinter.filedialog.askopenfilenames(filetypes=fTyp, initialdir=iDir, title='元となるデータを選んでください！')
 
     # 選択ファイルリスト作成
     list_f = list(file)
@@ -41,6 +44,29 @@ def read_so():
     else:
         order = pd.DataFrame()
     return order
+
+def read_fc():
+    # ファイル選択ダイアログの表示
+    # root = tkinter.Tk()
+    # root.withdraw()
+    fTyp = [("", "*")]
+    iDir = os.path.abspath(os.path.dirname(__file__))
+
+    # 受注実績データの取得
+    # ここの1行を変更 askopenfilename → askopenfilenames
+    file = tkinter.filedialog.askopenfilenames(filetypes=fTyp, initialdir=iDir, title='FCとなるCSVデータを選んでください！')
+
+    # 選択ファイルリスト作成
+    list_f = list(file)
+
+    if len(list_f) != 0:
+        # 1つ目のファイルを開く
+        f_name = os.path.basename(list_f[0])
+        f_pass = os.path.dirname(list_f[0])
+
+        # 必要な列のみ読み込む
+        fc = pd.read_csv(f_pass + '/' + f_name, sep=',', encoding='utf-8', dtype=object, engine='python', error_bad_lines=False)
+    return fc
 
 
 def ramdom_order_sub(S, year, month, SUPPLIER_CD, order_count, FC, header):
@@ -151,7 +177,7 @@ def Orders_creation_no_change_date():
 
 
         # 現法毎のFCを取り込む
-        FC = pd.read_csv(local_pass + 'FC.csv', encoding=font, dtype='object', index_col=None)
+        FC = read_fc()
         FC = FC.astype({'FC': int})
 
         # 日付と拠点毎にデータを分割しFCデータの数量だけRECを抽出する
