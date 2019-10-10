@@ -1,7 +1,5 @@
 # coding: utf-8
-# master summary 新規作成 2019/4/22
-# INNER7のフィルタをskip　2019/07/16
-# grp_rbs作成ステップを新規追加　2019/07/17
+# 新規作成　2019/10/10
 
 # モジュールのインポート
 import os, tkinter, tkinter.filedialog, tkinter.messagebox
@@ -52,16 +50,17 @@ def check_wq(list_f, font):
     for i in range(0, len(list_f)):
         f_name = os.path.basename(list_f[i])
         f_pass = os.path.dirname(list_f[i])
-        with open(f_pass + '/' + f_name, 'r', encoding=font) as f:
+        with open(f_pass + '/' + f_name, 'w', encoding=font) as f:
             file = f.read()
             if '"' in file:
-                print(f_pass + '/' + f_name + 'にダブルコーテーションが含まれるため置き換えて新規に保存します')
-                file = file.replace('"', '')
-                f_name = 'new_' + f_name
-                st = open(f_pass + '/' + f_name, 'w', encoding=font)
+                print(f_pass + '/' + f_name + 'にダブルコーテーションが含まれるため置き換えて上書き保存します')
+                f_name_row = 'row_' + f_name
+                st = open(f_pass + '/' + f_name_row, 'w', encoding=font)
                 st.write(file)
                 st.close()
-                list_f[i] = f_pass + '/' + f_name
+                file = file.replace('"', '')
+                # st = open(f_pass + '/' + f_name, 'w', encoding=font)
+                f.write(file)
 
 
 def read_data(title, font):
@@ -69,7 +68,7 @@ def read_data(title, font):
     root = tkinter.Tk()
     root.withdraw()
     fTyp = [("", "*")]
-    iDir = '../RBS_Master/input/'
+    iDir = '../RBS_M_COST_Master/product_and_mlt_master/input/'
 
     # 受注実績データの取得
     # ここの1行を変更 askopenfilename → askopenfilenames
@@ -123,19 +122,17 @@ def DATA_SEL():
     return sorce
 
 
-def rbs_master():
+def rbs_m_cost_master():
     # from tqdm import tqdm
     csv.field_size_limit(1000000000)
 
     # スクリプトのあるディレクトリの絶対パスを取得
     script_pass = os.path.dirname(os.path.abspath(__name__))
     local_pass = script_pass + '/'
-    out_pass = '../RBS_Master/output/'
+    out_pass = '../RBS_M_COST_Master/output/'
 
     font = 'utf-8'
-    # font='shift_jisx0213'
 
-    # inner7マスタで任意のグループのみを抽出→skip
     # 指定のグループによってR.B.S対象サプライヤを選択する
     pgname = inner7(local_pass, font)
 
@@ -229,19 +226,6 @@ def rbs_master():
     product_master = product_master.append(product_mlt, sort=False)
     product_master = product_master[product_master['Supplier Code'].notnull()]
     product_master.reset_index(drop=True, inplace=True)
-
-    # inner7マスタを指定のグループだけにする→skip
-    '''
-    Inner7_M = Inner7_M.loc[:, ['製造GR', 'インナー7']]
-    Inner7_M.drop_duplicates(keep='first', inplace=True)  # 重複削除
-    Inner7_M = Inner7_M[Inner7_M['製造GR'] == pg_name]
-
-    product_master['インナー7'] = product_master['Inner Code'].str[0:7]
-    product_master = pd.merge(product_master, Inner7_M, on='インナー7', how='inner')
-    product_master.drop(['インナー7', '製造GR'], axis=1, inplace=True)
-
-    product_master.reset_index(drop=True, inplace=True)
-    '''
 
     # マルチカラム化のために重複削除
     product_master.drop_duplicates(inplace=True)
@@ -491,4 +475,4 @@ def rbs_master():
 
 
 if __name__ == '__main__':
-    rbs_master()
+    rbs_m_cost_master()

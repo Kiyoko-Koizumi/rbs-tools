@@ -65,7 +65,7 @@ def read_fc():
         f_pass = os.path.dirname(list_f[0])
 
         # 必要な列のみ読み込む
-        fc = pd.read_csv(f_pass + '/' + f_name, sep=',', encoding='utf-8', dtype=object, engine='python', error_bad_lines=False)
+        fc = pd.read_csv(f_pass + '/' + f_name, sep=',', encoding='utf-8', dtype=object, index_col=None)
     return fc
 
 
