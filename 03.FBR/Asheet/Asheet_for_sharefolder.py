@@ -86,7 +86,7 @@ FC_SPCD.loc[FC_SPCD['CLASSIFY_CD'] == '03722115', '管理Gr'] = 'SPC_V'
 # FC_AとFC_ratioをmerge
 FC_ratio = FC_ratio[FC_ratio['備考'].isnull()]
 FC_ratio.drop(['備考', '元の割合', '備考2'], axis=1, inplace=True)
-FC_A = pd.merge(FC_A, FC_ratio, on=['調達Gr', '現法'], how='left')
+FC_A = pd.merge(FC_A, FC_ratio, on=['調達Gr', '現法'], how='inner')
 FC_A = FC_A.astype({'数量の合計': float, '割合': float})
 FC_A.loc[:, '数量の合計'] = FC_A['数量の合計'] * FC_A['割合']
 # FC_MJPとinter_ratioをmerge
@@ -112,37 +112,42 @@ FC_A = FC_A.append(FC_SPCD, sort=False)
 
 # 数量の合計を集計する
 FC_A.reset_index(drop=True, inplace=True)
-FC_A = FC_A.groupby(['現法', '製造GR', '月', '管理Gr'], as_index=False)[['数量の合計']].sum()
+if ((FC_A['現法'].isnull().values.sum() == 0) &
+        (FC_A['製造GR'].isnull().values.sum() == 0) &
+        (FC_A['月'].isnull().values.sum() == 0) &
+        (FC_A['管理Gr'].isnull().values.sum() == 0)):
+    FC_A = FC_A.groupby(['現法', '製造GR', '月', '管理Gr'], as_index=False)[['数量の合計']].sum()
 
-# 集計後補正値を加える
-FC_A = FC_A.append(CORR, sort=False)
+    # 集計後補正値を加える
+    FC_A = FC_A.append(CORR, sort=False)
 
-# 出力する条件を絞る
-FC_A = FC_A[FC_A['管理Gr'] != '対象外']
-FC_A = FC_A[((FC_A['製造GR'] == 'I') | (FC_A['製造GR'] == 'J') | (FC_A['製造GR'] == 'J2') | (FC_A['製造GR'] == 'K') |
-             (FC_A['製造GR'] == 'P') | (FC_A['製造GR'] == 'S') | (FC_A['製造GR'] == 'T') | (FC_A['製造GR'] == 'U') |
-             (FC_A['製造GR'] == 'V') | (FC_A['製造GR'] == 'F') | (FC_A['製造GR'] == 'W') | (FC_A['製造GR'] == 'Z') |
-             (FC_A['製造GR'] == 'B'))]
-FC_A = FC_A.loc[:, ['現法', '製造GR', '月', '管理Gr', '数量の合計']]
+    # 出力する条件を絞る
+    FC_A = FC_A[FC_A['管理Gr'] != '対象外']
+    FC_A = FC_A[((FC_A['製造GR'] == 'I') | (FC_A['製造GR'] == 'J') | (FC_A['製造GR'] == 'J2') | (FC_A['製造GR'] == 'K') |
+                 (FC_A['製造GR'] == 'P') | (FC_A['製造GR'] == 'S') | (FC_A['製造GR'] == 'T') | (FC_A['製造GR'] == 'U') |
+                 (FC_A['製造GR'] == 'V') | (FC_A['製造GR'] == 'F') | (FC_A['製造GR'] == 'W') | (FC_A['製造GR'] == 'Z') |
+                 (FC_A['製造GR'] == 'B'))]
+    FC_A = FC_A.loc[:, ['現法', '製造GR', '月', '管理Gr', '数量の合計']]
 
-# 並べ替え
-FC_A.sort_values(['現法', '製造GR', '月', '管理Gr'], inplace=True)
+    # 並べ替え
+    FC_A.sort_values(['現法', '製造GR', '月', '管理Gr'], inplace=True)
 
-# 内製、外製フラグをつける
-FC_A.loc[:, '内製'] = '外製'  # すべて外製を書き込み
-FC_A.loc[(FC_A['管理Gr'].str.contains('FCN') |
-          FC_A['管理Gr'].str.contains('SPC') |
-          FC_A['管理Gr'].str.contains('DLO') |
-          FC_A['管理Gr'].str.contains('DPP') |
-          FC_A['管理Gr'].str.contains('KOR') |
-          FC_A['管理Gr'].str.contains('駿河阿見')), '内製'] = '内製'
-# A表設定月を入れる
-today = dt.datetime.today().strftime("%Y%m")
-FC_A.loc[:, 'A表設定月'] = today
+    # 内製、外製フラグをつける
+    FC_A.loc[:, '内製'] = '外製'  # すべて外製を書き込み
+    FC_A.loc[(FC_A['管理Gr'].str.contains('FCN') |
+              FC_A['管理Gr'].str.contains('SPC') |
+              FC_A['管理Gr'].str.contains('DLO') |
+              FC_A['管理Gr'].str.contains('DPP') |
+              FC_A['管理Gr'].str.contains('KOR') |
+              FC_A['管理Gr'].str.contains('駿河阿見')), '内製'] = '内製'
+    # A表設定月を入れる
+    today = dt.datetime.today().strftime("%Y%m")
+    FC_A.loc[:, 'A表設定月'] = today
 
-# ファイルをアウトプット
-fname = '//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/output/A表' + dt.datetime.today().strftime(
-    "%Y%m%d") + '.xlsx'
-FC_A.to_excel(fname, sheet_name='A表', index=False)
-
-print("A表作成が完了しました!")
+    # ファイルをアウトプット
+    fname = '//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/A表作成ツール/output/A表' + dt.datetime.today().strftime(
+        "%Y%m%d") + '.xlsx'
+    FC_A.to_excel(fname, sheet_name='A表', index=False)
+    print("A表作成が完了しました!")
+else:
+    print('読み込みに失敗したファイルがあります！担当者にご連絡ください。')
