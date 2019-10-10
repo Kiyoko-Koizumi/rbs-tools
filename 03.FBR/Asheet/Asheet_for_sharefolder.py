@@ -57,7 +57,7 @@ CORR = CORR.reset_index()
 # カラムの名前を統一
 FC_A.rename(columns={'level_3': '月', 0: '数量の合計'}, inplace=True)
 FC_FCNSPC.rename(columns={'level_6': '月', 0: '数量の合計'}, inplace=True)
-FC_SPCD.rename(columns={'level_8': '月', 0: '数量の合計'}, inplace=True)
+FC_SPCD.rename(columns={'level_6': '月', 0: '数量の合計'}, inplace=True)
 FC_MJP.rename(columns={'level_5': '月', 0: '数量の合計'}, inplace=True)
 FC_CHNKOR.rename(columns={'level_3': '月', 0: '数量の合計'}, inplace=True)
 CORR.rename(columns={'level_5': '月', 0: '数量の合計'}, inplace=True)
@@ -133,6 +133,7 @@ FC_A.loc[:, '内製'] = '外製'  # すべて外製を書き込み
 FC_A.loc[(FC_A['管理Gr'].str.contains('FCN') |
           FC_A['管理Gr'].str.contains('SPC') |
           FC_A['管理Gr'].str.contains('DLO') |
+          FC_A['管理Gr'].str.contains('DPP') |
           FC_A['管理Gr'].str.contains('KOR') |
           FC_A['管理Gr'].str.contains('駿河阿見')), '内製'] = '内製'
 # A表設定月を入れる
