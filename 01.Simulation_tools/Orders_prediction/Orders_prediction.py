@@ -25,6 +25,7 @@ import pandas.tseries.offsets as offsets
 from multiprocessing import Pool
 import multiprocessing as multi
 import datetime
+import copy
 
 def getFACI_CD(fc_name, list_pg):
     # SELECTボタンが押されたときの動き
@@ -252,10 +253,10 @@ def Orders_prediction():
             if len(check_list[c]) == 1:
                 check_list[c] = '0' + check_list[c]
 
-        Tgt_S = result[1] + check_list[0] + check_list[4]
-        Tgt_E = result[2] + check_list[1] + check_list[5]
-        Pre_S = result[3] + check_list[2] + check_list[6]
-        Pre_E = result[4] + check_list[3] + check_list[7]
+        Tgt_S_M = result[1] + check_list[0] + check_list[4]
+        Tgt_E_M = result[2] + check_list[1] + check_list[5]
+        Pre_S_M = result[3] + check_list[2] + check_list[6]
+        Pre_E_M = result[4] + check_list[3] + check_list[7]
 
         # 1つ目のファイルを開く
         f_name = os.path.basename(list_f[0])
@@ -311,7 +312,7 @@ def Orders_prediction():
         # 出荷実績SSDデータ利用期間に限定する
         # 基本的に受注予測は受注日でのサマリ
         # 条件を作成
-        condition = Tgt_S + ' <= 受注日 <= ' + Tgt_E
+        condition = Tgt_S_M + ' <= 受注日 <= ' + Tgt_E_M
         order = order.query(condition)
 
         # 作成したデータを入れるdfを作成
@@ -322,6 +323,10 @@ def Orders_prediction():
             # orderのサプライヤコードが指定のサプライヤのものだけにする
             order_sup = order[order['実績仕入先コード'] == pg_name].copy()
             if len(order_sup) > 0:
+                Tgt_S = copy.copy(Tgt_S_M)
+                Tgt_E = copy.copy(Tgt_E_M)
+                Pre_S = copy.copy(Pre_S_M)
+                Pre_E = copy.copy(Pre_E_M)
                 # 受注日、出荷日をdate形式へ変更
                 order_sup = order_sup.astype({'受注日': str, '受注実績SSD': str})
                 order_sup['受注日'] = order_sup['受注日'].str[0:4] + '-' + order_sup['受注日'].str[4:6] + '-' + order_sup['受注日'].str[6:8]
