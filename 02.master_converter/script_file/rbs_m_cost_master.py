@@ -50,7 +50,7 @@ def check_wq(list_f, font):
     for i in range(0, len(list_f)):
         f_name = os.path.basename(list_f[i])
         f_pass = os.path.dirname(list_f[i])
-        with open(f_pass + '/' + f_name, 'w', encoding=font) as f:
+        with open(f_pass + '/' + f_name, 'r', encoding=font) as f:
             file = f.read()
             if '"' in file:
                 print(f_pass + '/' + f_name + 'にダブルコーテーションが含まれるため置き換えて上書き保存します')
@@ -123,13 +123,12 @@ def DATA_SEL():
 
 
 def rbs_m_cost_master():
-    # from tqdm import tqdm
     csv.field_size_limit(1000000000)
 
     # スクリプトのあるディレクトリの絶対パスを取得
     script_pass = os.path.dirname(os.path.abspath(__name__))
     local_pass = script_pass + '/'
-    out_pass = '../RBS_M_COST_Master/output/'
+    out_pass = '../RBS_M_COST_Master/product_multi_supp_slide/output/'
 
     font = 'utf-8'
 
@@ -150,25 +149,11 @@ def rbs_m_cost_master():
 
     font = 'utf_8'
 
-    # 商品別仕入先マスタのheaderを読み込む
-
-    prod_mlt_supp_header = pd.read_csv('../RBS_Master/config/prod_mlt_supp_header.tsv', sep='\t', encoding=font, dtype=object,
-                                       engine='python', error_bad_lines=False)
-
     # 必要なカラムだけにする
     if data_s == 'zetta':
-        product_master = product_master_m.iloc[:, [2, 3, 4, 5, 88, 89, 112, 116]]
-        product_mlt = product_mlt_m.iloc[:, [2, 3, 4, 6, 7]]
         # XXX行を除く
-        product_master = product_master[product_master['Subsidiary Code'] != 'XXX']
-        product_mlt = product_mlt[product_mlt['現法コード'] != 'XXX']
-        product_mlt = product_mlt.rename(columns={'現法コード': 'Subsidiary Code',
-                                                  'インナーコード': 'Inner Code',
-                                                  '商品コード': 'Product Code',
-                                                  'ＭC/置場コード': 'MC_PLANT_CD',
-                                                  '仕入先コード': 'Supplier Code'})
-        product_master.loc[:, 'CLASSIFY_CD'] = 'ZETTAマスタのためデータなし'
-        product_mlt.loc[:, 'CLASSIFY_CD'] = 'ZETTAマスタのためデータなし'
+        product_master = product_master_m[product_master_m['Subsidiary Code'] != 'XXX']
+        product_mlt = product_mlt_m[product_mlt_m['Subsidiary Code'] != 'XXX']
 
     elif data_s == 'DLsite':
         # ダウンロードサイトからのデータの場合上記に変わり以下を実行
@@ -196,280 +181,61 @@ def rbs_m_cost_master():
                                                   'SUPPLIER_CD': 'Supplier Code'})
         product_master = product_master_m.iloc[:, [0, 1, 2, 3, 84, 86, 87, 110, 114]]
         product_mlt = product_mlt_m.iloc[:, [0, 1, 2, 4, 5, 59]]
-        # 指定のグループによってR.B.S対象分析コードを限定する
-        if pgname == 'LS':
-            product_master = product_master[product_master['CLASSIFY_CD'] == '03721101']
-        elif pgname == 'LP':
-            product_master = product_master[product_master['CLASSIFY_CD'] == '03722108']
-        elif pgname == 'TP':
-            product_master = product_master[product_master['CLASSIFY_CD'] == '03622710']
 
-    # 在庫品、販売中止、海外顧客用のインナーは除く
-    product_master = product_master[
-        (product_master['Stock / MTO'] == '1') & (product_master['Product Special Flg'] == '0') & (
-                product_master['SO Suspension'] == '0')]
+    # RBS_MCOST商品別仕入先数量スライドマスタに必要なカラムのみにする
+    product_master = product_master.iloc[:, [0, 1, 2, 3, 4, 89, 13, 18, 23, 28, 33, 38, 43, 48, 53, 58]]
+    product_mlt = product_mlt.iloc[:, [0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]]
 
-    # 商品マスタで通常販売及びQランク登録されているインナーのみにする
-    # 現法とインナーコードのリストを作成
-    product_master_l = product_master[(product_master['Prod Mst for Alt Supplier'] != '0')]  # 利用されていない商品別仕入先マスタを削除
-    product_master_l = product_master_l.iloc[:, [0, 1, 4]]  # 商品区分のため、分析コード追加
-    product_master_l.drop_duplicates(inplace=True)
-    product_mlt = pd.merge(product_mlt, product_master_l, on=['Subsidiary Code', 'Inner Code', 'CLASSIFY_CD'],
-                           how='inner')
+    # 商品マスタと商品別仕入先マスタのカラム名をM_COSTに合わせる
+    for slide in range(1, 11):
+        product_master_column = 'Slide Purchase Pc/Unit ' + str(slide)
+        product_mlt_column = 'Slide Purchase Unit Price ' + str(slide)
+        product_m_cost_master_column = 'Slide Manufacturing Cost ' + str(slide)
+        product_master = product_master.rename(columns={product_master_column: product_m_cost_master_column})
+        product_master = product_master.rename(columns={product_mlt_column: product_m_cost_master_column})
 
-    # 商品マスタにQランク00を登録する
-    product_master['MC_PLANT_CD'] = '00'
-
-    # 商品マスタと商品別仕入先マスタをマージする
-    product_master.drop(['Stock / MTO', 'Prod Mst for Alt Supplier', 'Product Special Flg', 'SO Suspension'], axis=1,
-                        inplace=True)
-    product_master = product_master.append(product_mlt, sort=False)
-    product_master = product_master[product_master['Supplier Code'].notnull()]
-    product_master.reset_index(drop=True, inplace=True)
-
-    # マルチカラム化のために重複削除
-    product_master.drop_duplicates(inplace=True)
-
-    # 現法をインデックス化
-    grp_sub = product_master.set_index(['Product Code', 'Inner Code', 'MC_PLANT_CD', 'Subsidiary Code', 'CLASSIFY_CD'],
-                                       inplace=False)
-
-    # 現法をマルチカラム化
-    grp_sub = grp_sub.unstack('MC_PLANT_CD')
-    grp_sub = grp_sub.unstack('Subsidiary Code')
-    grp_sub = grp_sub.swaplevel(axis=1).sort_index(axis=1)
-    grp_sub.dropna(axis=1, how='all', inplace=True)
-
-    # 仕入先をインデックス化
-    # 現法情報削除、重複削除
-    grp_supp = product_master.copy()
-    grp_supp['Subsidiary Code'] = '1'
-    grp_supp.drop(['MC_PLANT_CD'], axis=1, inplace=True)
-    grp_supp.drop_duplicates(inplace=True)
+    # 商品マスタと商品別仕入先マスタを結合する
+    product_m_cost_master = product_master.append(product_mlt, sort=False)
 
     # 仕入先コードを限定
     # 指定のグループによってR.B.S対象サプライヤを選択する
     if pgname == 'LS':
-        grp_supp = grp_supp[(grp_supp['Supplier Code'] == '7017') | (grp_supp['Supplier Code'] == '3764') | (
-                grp_supp['Supplier Code'] == '0FCN') | (grp_supp['Supplier Code'] == 'SPCM')]
+        product_m_cost_master = product_m_cost_master[(product_m_cost_master['Supplier Code'] == '7017') |
+                                                      (product_m_cost_master['Supplier Code'] == '3764') |
+                                                      (product_m_cost_master['Supplier Code'] == 'ECAL') |
+                                                      (product_m_cost_master['Supplier Code'] == 'FCNX') |
+                                                      (product_m_cost_master['Supplier Code'] == '0FCN') |
+                                                      (product_m_cost_master['Supplier Code'] == 'SPCM')]
     elif pgname == 'LP' or pgname == 'TP':
-        grp_supp = grp_supp[(grp_supp['Supplier Code'] == '0143') | (
-                grp_supp['Supplier Code'] == '0AIO') | (grp_supp['Supplier Code'] == 'SPCM')]
+        product_m_cost_master = product_m_cost_master[(product_m_cost_master['Supplier Code'] == '0143') | (
+                product_m_cost_master['Supplier Code'] == '0AIO') | (product_m_cost_master['Supplier Code'] == 'SPCM')]
 
-    # 仕入先コードを限定 product_masterにも
-    # 指定のグループによってR.B.S対象サプライヤを選択する
-    if pgname == 'LS':
-        product_master = product_master[
-            (product_master['Supplier Code'] == '7017') | (product_master['Supplier Code'] == '3764') | (
-                    product_master['Supplier Code'] == '0FCN') | (product_master['Supplier Code'] == 'SPCM') | (
-                    product_master['Supplier Code'] == 'ECAL') | (
-                    product_master['Supplier Code'] == 'FCNX') | (product_master['Supplier Code'] == 'FCNT')]
-    elif pgname == 'LP' or pgname == 'TP':
-        product_master = product_master[(product_master['Supplier Code'] == '0143') | (
-                product_master['Supplier Code'] == '0AIO') | (product_master['Supplier Code'] == 'SPCM') | (
-                                                product_master['Supplier Code'] == 'ECAL') | (
-                                                product_master['Supplier Code'] == 'AIOX') | (
-                                                    product_master['Supplier Code'] == 'AIOT')]
+    # スライド製造原価通貨コードを入れる
+    product_m_cost_master.loc[((product_m_cost_master['Supplier Code'] == 'ECAL') |
+                               (product_m_cost_master['Supplier Code'] == '7017') |
+                               (product_m_cost_master['Supplier Code'] == '3764') |
+                               (product_m_cost_master['Supplier Code'] == '0143')), 'スライド製造原価通貨コード'] = 'JPY'
+    product_m_cost_master.loc[((product_m_cost_master['Supplier Code'] == '0FCN') |
+                               (product_m_cost_master['Supplier Code'] == '0AIO') |
+                               (product_m_cost_master['Supplier Code'] == '0TYO') |
+                               (product_m_cost_master['Supplier Code'] == 'FCNX') |
+                               (product_m_cost_master['Supplier Code'] == 'AIOX') |
+                               (product_m_cost_master['Supplier Code'] == 'TYOX') |
+                               (product_m_cost_master['Supplier Code'] == 'FCNT') |
+                               (product_m_cost_master['Supplier Code'] == 'AIOT') |
+                               (product_m_cost_master['Supplier Code'] == 'TYOT')), 'スライド製造原価通貨コード'] = 'RMB'
+    product_m_cost_master.loc[((product_m_cost_master['Supplier Code'] == 'SPCM')), 'スライド製造原価通貨コード'] = 'USD'
 
-    # new_mlt用にrbs_product_masterをkeep
-    rbs_product_mlt = product_master.copy()
-
-    # 管理単位コードの作成
-    managed_unit_cd_dict = {'LS': 'Z10', 'TP': 'P10', 'LP': 'I10'}
-
-    grp_supp_temp = grp_supp.copy()
-    grp_supp = grp_supp.set_index(['Product Code', 'Inner Code', 'Supplier Code', 'CLASSIFY_CD'], inplace=False)
-
-    # 現法をマルチカラム化
-    grp_supp = grp_supp.unstack('Supplier Code')
-    grp_supp = grp_supp.swaplevel(axis=1).sort_index(axis=1)
-    grp_supp.dropna(axis=1, how='all', inplace=True)
-
-    # product_masterから'Subsidiary Code', 'Product Code'のみの既存マスタにおけるR.B.S対象リストを作成
-    rbs_product_master = product_master.copy()
-    # MC_PLANT_CDが00（商品マスタ）→商品別仕入先マスタの順で並んでいる前提で重複削除
-    rbs_product_master.drop_duplicates(subset=['Subsidiary Code', 'Product Code'], keep='first', inplace=True)
-    # 既存マスタを'MC_PLANT_CD'='00'で表現
-    rbs_product_master.loc[:, 'MC_PLANT_CD'] = '00'
-
-    # grp_supp_tempのSubsidiary Code,Inner Code,CLASSIFY_CDを削除,Supplier Codeの名前を変更する
-    grp_supp_temp.drop(['Subsidiary Code', 'Inner Code', 'CLASSIFY_CD'], axis=1, inplace=True)
-    grp_supp_temp = grp_supp_temp.rename(columns={'Supplier Code': 'Supplier Code2'})
-
-    # rbs_product_masterとgrp_supp_tempをProduct_Codeをキーにして結合
-    rbs_product_master2 = pd.merge(rbs_product_master, grp_supp_temp, on=['Product Code'], how='inner')
-
-    # MC_PLANT_CDにSupplier Codeを転記、その後削除
-    rbs_product_master2['MC_PLANT_CD'] = rbs_product_master2['Supplier Code2']
-    rbs_product_master2.drop(['Supplier Code2'], axis=1, inplace=True)
-
-    # rbs_product_masterとrbs_product_master2を結合
-    rbs_product_master = rbs_product_master.append(rbs_product_master2, sort=False)
-
-    # 仕入先コードをMC_PLANT_CDに合わせて書き換え
-    rbs_product_master.loc[(((rbs_product_master['MC_PLANT_CD'] == '0143') | (
-            rbs_product_master['MC_PLANT_CD'] == '0269') | (
-                                     rbs_product_master['MC_PLANT_CD'] == '7017') | (
-                                     rbs_product_master['MC_PLANT_CD'] == '3764')) & (
-                                    rbs_product_master['Subsidiary Code'] != 'MJP')), 'Supplier Code'] = 'ECAL'
-    rbs_product_master.loc[((rbs_product_master['MC_PLANT_CD'] == '0143') & (
-            rbs_product_master['Subsidiary Code'] == 'MJP')), 'Supplier Code'] = '0143'
-    rbs_product_master.loc[((rbs_product_master['MC_PLANT_CD'] == '0269') & (
-            rbs_product_master['Subsidiary Code'] == 'MJP')), 'Supplier Code'] = '0269'
-    rbs_product_master.loc[((rbs_product_master['MC_PLANT_CD'] == '0AIO') & (
-            rbs_product_master['Subsidiary Code'] != 'CHN')), 'Supplier Code'] = 'AIOX'
-    rbs_product_master.loc[((rbs_product_master['MC_PLANT_CD'] == '0AIO') & (
-            rbs_product_master['Subsidiary Code'] == 'CHN')), 'Supplier Code'] = '0AIO'
-    rbs_product_master.loc[((rbs_product_master['MC_PLANT_CD'] == '7017') & (
-            rbs_product_master['Subsidiary Code'] == 'MJP')), 'Supplier Code'] = '7017'
-    rbs_product_master.loc[((rbs_product_master['MC_PLANT_CD'] == '3764') & (
-            rbs_product_master['Subsidiary Code'] == 'MJP')), 'Supplier Code'] = '3764'
-    rbs_product_master.loc[((rbs_product_master['MC_PLANT_CD'] == '0FCN') & (
-            rbs_product_master['Subsidiary Code'] != 'CHN')), 'Supplier Code'] = 'FCNX'
-    rbs_product_master.loc[((rbs_product_master['MC_PLANT_CD'] == '0FCN') & (
-            rbs_product_master['Subsidiary Code'] == 'CHN')), 'Supplier Code'] = '0FCN'
-    rbs_product_master.loc[(rbs_product_master['MC_PLANT_CD'] == 'SPCM'), 'Supplier Code'] = 'SPCM'
-
-    # rbs_product_masterとrbs_product_mltの差分を確認し、差分が新たに商品別仕入先マスタ作成必要なもの
-    # R.B.S対象インナーに限定するためのProduct Codeに限定
-    rbs_product = rbs_product_master['Product Code']  # Seriesを作成
-    rbs_product.drop_duplicates(keep='first', inplace=True)
-    # rbs_product_mltをrbs_productでフィルタ
-    rbs_product_mlt = rbs_product_mlt[rbs_product_mlt['Product Code'].isin(rbs_product)]
-    new_mlt = rbs_product_master.append(rbs_product_mlt, sort=False)
-    new_mlt.reset_index(drop=True, inplace=True)
-    new_mlt.drop_duplicates(subset=['Subsidiary Code', 'Product Code', 'Supplier Code'], keep='first', inplace=True)
-
-    # マルチカラム化のために重複削除
-    rbs_product_master.reset_index(drop=True, inplace=True)
-    rbs_product_master.drop_duplicates(inplace=True)
-
-    # R.B.Sオーダー振替設定マスタ用dfの作成
-    m_rbs_order_transfer = rbs_product_master.loc[:, ['Subsidiary Code', 'Inner Code']].copy()
-    m_rbs_order_transfer = m_rbs_order_transfer.rename(
-        columns={'Subsidiary Code': 'SUBSIDIARY_CD', 'Inner Code': 'INNER_CD'})
-    m_rbs_order_transfer.loc[:, 'EFFECTIVE_DATE_FROM'] = ''
-    m_rbs_order_transfer.loc[:, 'EFFECTIVE_DATE_TO'] = ''
-    m_rbs_order_transfer.loc[:, 'TRANSFER_CHK_DAYS'] = ''
-    m_rbs_order_transfer.loc[:, 'Process Mode'] = ''
-    m_rbs_order_transfer.loc[:, 'Master ID'] = ''
-    m_rbs_order_transfer = m_rbs_order_transfer.loc[:,
-                           ['Process Mode', 'Master ID', 'SUBSIDIARY_CD', 'INNER_CD', 'EFFECTIVE_DATE_FROM',
-                            'EFFECTIVE_DATE_TO', 'TRANSFER_CHK_DAYS']]
-
-    # R.B.S商品別仕入先マスタ用dfの作成
-    m_rbs_product_multi_supplier = rbs_product_master.loc[:, ['Subsidiary Code', 'Inner Code', 'Supplier Code']].copy()
-    m_rbs_product_multi_supplier = m_rbs_product_multi_supplier.rename(
-        columns={'Subsidiary Code': 'SUBSIDIARY_CD', 'Inner Code': 'INNER_CD', 'Supplier Code': 'SUPPLIER_CD'})
-    m_rbs_product_multi_supplier.loc[:, 'MANAGED_UNIT_CD'] = managed_unit_cd_dict[pgname]
-    m_rbs_product_multi_supplier.loc[:, 'RBS_FLG'] = '0'
-    # 'SUBSIDIARY_CD', 'INNER_CD'の重複する行のみR.B.S_FLG=1
-    m_rbs_product_multi_supplier.loc[
-        m_rbs_product_multi_supplier.duplicated(subset=['SUBSIDIARY_CD', 'INNER_CD'], keep=False), 'RBS_FLG'] = '1'
-    m_rbs_product_multi_supplier.loc[:, 'Process Mode'] = ''
-    m_rbs_product_multi_supplier.loc[:, 'Master ID'] = ''
-    m_rbs_product_multi_supplier = m_rbs_product_multi_supplier.loc[:,
-                                   ['Process Mode', 'Master ID', 'SUBSIDIARY_CD', 'INNER_CD', 'SUPPLIER_CD',
-                                    'MANAGED_UNIT_CD', 'RBS_FLG']]
-
-    # 現法をインデックス化
-    grp_rbs = rbs_product_master.set_index(
-        ['Product Code', 'Inner Code', 'MC_PLANT_CD', 'Subsidiary Code', 'CLASSIFY_CD'], inplace=False)
-
-    # 現法をマルチカラム化
-    grp_rbs = grp_rbs.unstack('MC_PLANT_CD')
-    grp_rbs = grp_rbs.unstack('Subsidiary Code')
-    grp_rbs = grp_rbs.swaplevel(axis=1).sort_index(axis=1)
-    grp_rbs.dropna(axis=1, how='all', inplace=True)
-
-    # 商品別仕入先マスタのYY作成必要なリストを出力
-    # 商品マスタから数量スライドを抽出
-    product_master_slide = product_master_m.loc[:, ['Subsidiary Code',
-                                                    'Inner Code',
-                                                    'Slide Qty 1',
-                                                    'Slide Qty 2',
-                                                    'Slide Qty 3',
-                                                    'Slide Qty 4',
-                                                    'Slide Qty 5',
-                                                    'Slide Qty 6',
-                                                    'Slide Qty 7',
-                                                    'Slide Qty 8',
-                                                    'Slide Qty 9',
-                                                    'Slide Qty 10']]
-    # A調達は簡単なのでロジックで作成
-    prod_mlt_supp = new_mlt.loc[:, ['Subsidiary Code', 'Product Code', 'Inner Code', 'Supplier Code']]
-    prod_mlt_supp.loc[:, 'Process Mode'] = '4'
-    prod_mlt_supp.loc[:, 'Master ID'] = '18'
-    prod_mlt_supp.loc[:, 'MC/Plant Code'] = 'YY'
-    prod_mlt_supp.loc[:, 'Express T Purchase Unit Price'] = '0'
-    prod_mlt_supp.loc[:, 'Express A Purchase Unit Price'] = '0'
-    prod_mlt_supp.loc[:, 'Plant Express A Purchase Unit Price'] = '0'
-    prod_mlt_supp.loc[:, 'Express B Purchase Unit Price'] = '0'
-    prod_mlt_supp.loc[:, 'Express C Purchase Unit Price'] = '0'
-    prod_mlt_supp.loc[:, 'Production LT for Stock'] = '0'
-    prod_mlt_supp.loc[:, 'Apply TI to Plant 1'] = '0'
-    prod_mlt_supp.loc[:, 'Apply TI to Plant 2'] = '0'
-    prod_mlt_supp.loc[:, 'Apply TI to Plant 3'] = '0'
-    prod_mlt_supp.loc[:, 'Apply TI to Plant 4'] = '0'
-    prod_mlt_supp.loc[:, 'Apply TI to Plant 5'] = '0'
-    prod_mlt_supp.loc[:, 'SO Cancel Charge Rate'] = '0'
-    prod_mlt_supp.loc[:, '1st Day After SO Cancel Charge Rate'] = '0'
-    prod_mlt_supp.loc[:, '3rd Days After SO Cancel Charge Rate'] = '0'
-    prod_mlt_supp.loc[:, 'Express A Direct Shipment Flg'] = '0'
-    prod_mlt_supp.loc[:, 'Express B Direct Shipment Flg'] = '0'
-    prod_mlt_supp.loc[:, 'Express C Direct Shipment Flg'] = '0'
-    prod_mlt_supp.loc[:, 'Express T Direct Shipment Flg'] = '0'
-    prod_mlt_supp.loc[:, 'Express T Production LT'] = '0'
-    prod_mlt_supp.loc[:, 'Express A Production LT'] = '0'
-    prod_mlt_supp.loc[:, 'Express B Production LT'] = '0'
-    prod_mlt_supp.loc[:, 'Express C Production LT'] = '0'
-    prod_mlt_supp.loc[((prod_mlt_supp['Supplier Code'] == 'ECAL') | (prod_mlt_supp['Supplier Code'] == 'FCNX') | (
-                prod_mlt_supp['Supplier Code'] == 'AIOX') | (prod_mlt_supp['Supplier Code'] == 'FCNT') | (
-                                  prod_mlt_supp['Supplier Code'] == 'AIOT')), 'Purchase Mode'] = 'A'
-    prod_mlt_supp.loc[((prod_mlt_supp['Supplier Code'] == '7017') | (prod_mlt_supp['Supplier Code'] == '3764') | (
-                prod_mlt_supp['Supplier Code'] == '0143') | (prod_mlt_supp['Supplier Code'] == 'SPCM') | (
-                prod_mlt_supp['Supplier Code'] == '0FCN') | (prod_mlt_supp['Supplier Code'] == '0AIO')), 'Purchase Mode'] = 'B'
-    prod_mlt_supp.loc[prod_mlt_supp['Purchase Mode'] == 'A', 'Production LT'] = '0'
-
-    # 数量スライドの代入
-    prod_mlt_supp = pd.merge(prod_mlt_supp, product_master_slide, on=['Subsidiary Code', 'Inner Code'], how='left')
-    for slide in range(1,11):
-        slide_qty = 'Slide Qty ' + str(slide)
-        spsu = 'Slide Purchase Unit Price ' + str(slide)
-        splt = 'Slide Production LT ' + str(slide)
-        prod_mlt_supp.loc[((prod_mlt_supp['Purchase Mode'] == 'A') & (prod_mlt_supp[slide_qty].notnull())), spsu] = '0'
-        prod_mlt_supp.loc[((prod_mlt_supp['Purchase Mode'] == 'A') & (prod_mlt_supp[slide_qty].notnull())), splt] = '0'
-        prod_mlt_supp.drop([slide_qty], axis=1, inplace=True)
-
-    # ファイルアウトプット
-    f_name = pgname + '_grp_sub.tsv'
-    grp_sub.to_csv(out_pass + f_name, sep='\t', encoding=font, index=True)
-    f_name = pgname + '_grp_supp.tsv'
-    grp_supp.to_csv(out_pass + f_name, sep='\t', encoding=font, index=True)
-    f_name = pgname + '_grp_rbs.tsv'
-    grp_rbs.to_csv(out_pass + f_name, sep='\t', encoding=font, index=True)
+    # PKで重複削除
+    product_m_cost_master.drop_duplicates(subset=['Subsidiary Code', 'Inner Code', 'Product Code', 'Supplier Code'], keep='first', inplace=True)
 
     # 現法毎にファイル出力
     sub_name = ['CHN', 'GRM', 'HKG', 'IND', 'JKT', 'KOR', 'MEX', 'MJP', 'MYS', 'SGP', 'THA', 'TIW', 'USA', 'VNM']
     for v in sub_name:
-        sub_up1 = m_rbs_order_transfer[m_rbs_order_transfer['SUBSIDIARY_CD'] == v].copy()
-        sub_up2 = m_rbs_product_multi_supplier[m_rbs_product_multi_supplier['SUBSIDIARY_CD'] == v].copy()
-        prod_mlt_supp_a = prod_mlt_supp[((prod_mlt_supp['Subsidiary Code'] == v) & (prod_mlt_supp['Purchase Mode'] == 'A'))].copy()
-        prod_mlt_supp_b = prod_mlt_supp[((prod_mlt_supp['Subsidiary Code'] == v) & (prod_mlt_supp['Purchase Mode'] == 'B'))].copy()
-        if len(sub_up1) > 0:
-            sub_up_name = v + '_m_rbs_order_transfer.txt'
-            sub_up1.to_csv(out_pass + sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
-        if len(sub_up2) > 0:
-            sub_up_name = v + '_m_rbs_product_multi_supplier.txt'
-            sub_up2.to_csv(out_pass + sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
-        if len(prod_mlt_supp_a) > 0:
-            prod_mlt_supp_a = prod_mlt_supp_header.append(prod_mlt_supp_a, sort=False)
-            prod_mlt_supp_a_name = v + '_m_product_multi_supplier_A.txt'
-            prod_mlt_supp_a.to_csv(out_pass + prod_mlt_supp_a_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
-        if len(prod_mlt_supp_b) > 0:
-            prod_mlt_supp_b = prod_mlt_supp_header.append(prod_mlt_supp_b, sort=False)
-            prod_mlt_supp_b_name = v + '_m_product_multi_supplier_B.txt'
-            prod_mlt_supp_b.to_csv(out_pass + prod_mlt_supp_b_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
+        sub_up = product_m_cost_master[product_m_cost_master['Subsidiary Code'] == v].copy()
+        if len(sub_up) > 0:
+            sub_up_name = v + '_rbs_product_multi_supp_slide_m_cost_master.txt'
+            sub_up.to_csv(out_pass + sub_up_name, sep='\t', encoding='utf_16', quotechar='"', line_terminator='\r\n', index=False)
 
     print('Finish!')
 
