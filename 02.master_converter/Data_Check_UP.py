@@ -1,9 +1,9 @@
 
-# ★★　商品マスターのみ　ヘッダが一致・Innerが一致するもののみを対象にしてください！！　★★
+# ★★　単価マスターのみ　ヘッダが一致・Innerが一致するもののみを対象にしてください！！　★★
 import pandas as pd
 import numpy as np
 import csv
-import Type
+import Type_U
 import datetime
 print(datetime.datetime.now())
 
@@ -12,18 +12,19 @@ print(datetime.datetime.now())
 path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/Data_Check/'
 
 # ★★　基準となるtxtファイル名を変えてください！！　↓（緑色のここ）　★★
-a = pd.DataFrame(pd.read_csv(path + '03722108_USA_UnitPrice_filled.txt',sep='\t', encoding='utf_16', dtype=str, engine='python', error_bad_lines=False))
+b = pd.DataFrame(pd.read_csv(path + 'USA_U_Product.txt',sep='\t', encoding='utf_16', dtype=str, engine='python', error_bad_lines=False))
 # ★★　チェック対象となるtxtファイル名を変えてください！！　↓（緑色のここ）　★★
-b = pd.DataFrame(pd.read_csv(path + 'USA_U_Product.txt', sep='\t', encoding='utf_16', dtype=str, engine='python', error_bad_lines=False))
+a = pd.DataFrame(pd.read_excel(path + '03722108_USA_UnitPrice.xlsx', sheet_name='UnitPrice①', dtype=str))    # 文字列で読み込み
+#b = pd.DataFrame(pd.read_csv(path + '03722108_USA_UnitPrice.txt', sep='\t', encoding='utf_16', dtype=str, engine='python', error_bad_lines=False))
 
 a = a.sort_values(by='Inner Code')
 b = b.sort_values(by='Inner Code')
 
-a = a.astype(Type.type())   # データ型をそろえる
+a = a.astype(Type_U.type())   # データ型をそろえる
 a = a.fillna('')
 a.to_csv(path + 'A_product.txt', sep='\t', encoding='utf_16', index=False)
 
-b = b.astype(Type.type())   # データ型をそろえる
+b = b.astype(Type_U.type())   # データ型をそろえる
 b = b.fillna('')
 b.to_csv(path + 'B_product.txt', sep='\t', encoding='utf_16', index=False)
 
@@ -62,11 +63,12 @@ else:
     df3 = df3.append(a, sort=False)
     df3 = df3.append(b, sort=False)
 
-    df3 = df3.sort_values(by=['Inner Code','data'])
+    df3.drop_duplicates(subset=['Inner Code', 'Product Code', 'Min.Val.1', 'data'], keep='first', inplace=True)  # 重複削除
+    df3 = df3.sort_values(by=['Inner Code', 'Min.Val.1', 'data'])
 
     # ★★　出力するExcelファイル名を変えてください！！（緑色の部分）　★★
     # ★★　不一致が多いとエラーの可能性あり　4G超え　★★
-    df3.to_excel(path + 'spc_usa_check.xlsx', index=False)
+    df3.to_excel(path + 'spc_usa_check3.xlsx', index=False)
 
 print(datetime.datetime.now())
 print('fin')
