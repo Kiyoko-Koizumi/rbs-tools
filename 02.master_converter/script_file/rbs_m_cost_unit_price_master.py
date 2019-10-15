@@ -128,7 +128,7 @@ def rbs_m_cost_master():
     # スクリプトのあるディレクトリの絶対パスを取得
     script_pass = os.path.dirname(os.path.abspath(__name__))
     local_pass = script_pass + '/'
-    out_pass = '../RBS_M_COST_Master/product_multi_supp_slide/output/'
+    out_pass = '../RBS_M_COST_Master/unit_price_master/output/'
 
     font = 'utf-8'
 
