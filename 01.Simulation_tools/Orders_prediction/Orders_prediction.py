@@ -618,6 +618,7 @@ def Orders_prediction():
             print('受注予測作成完了しました!')
         else:
             print('FC_*.csvファイルが複数ある、または存在しません！')
+            print('受注予測作成終了します')
 
 if __name__ == '__main__':
     Orders_prediction()
