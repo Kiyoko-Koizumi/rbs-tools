@@ -8,6 +8,8 @@ import glob
 import os, tkinter, tkinter.filedialog, tkinter.messagebox
 import tkinter as tk
 import tkinter.ttk as ttk
+import threading
+from threading import Thread
 
 import SPC_P01_Target_Inner
 import SPC_P02_Zetta_Slide
@@ -16,13 +18,14 @@ import SPC_P04_SlideMerge
 import SPC_P05_ProductMaster_Err
 import SPC_P06_ProductMerge
 import SPC_P07_ProductMaster_Add
+import SPC_P08_Summary
 
 import SPC_U01_Master
 import SPC_U02_SlideMerge
 import SPC_U03_Master_Err
 import SPC_U04_MasterMerge_Add
 
-csv.field_size_limit(1000000000)
+#csv.field_size_limit(1000000000)
 
 font = 'utf-8'
 
@@ -45,24 +48,37 @@ def select_func():
                        command=lambda: func1(), width=30)
     def SPC_P():
         SPC_P01_Target_Inner.SPC_P01_Target_Inner()
-        SPC_P02_Zetta_Slide.SPC_P02_Zetta_Slide()
-        SPC_P03_SPC_Slide.SPC_P03_SPC_Slide()
+        # SPC_P02とSPC_P03を同時に実行
+        th1.start()
+        th2.start()
+        thread_list = threading.enumerate()
+        thread_list.remove(threading.main_thread())
+        for thread in thread_list:
+            thread.join()
+        print('All thread is ended.')
+
         SPC_P04_SlideMerge.SPC_P04_SlideMerge()
         SPC_P05_ProductMaster_Err.SPC_P05_ProductMaster_Err()
         SPC_P06_ProductMerge.SPC_P06_ProductMerge()
         SPC_P07_ProductMaster_Add.SPC_P07_ProductMaster_Add()
+        SPC_P08_Summary()
+        root = tkinter.Tk()
+        root.withdraw()
+        tkinter.messagebox.showinfo('Summary確認', '「Product_Summary.xlsx」を確認してください！')
 
     button3 = tk.Button(root, text="Product_master to SPC",
-                       command=lambda: SPC_P(), width=30)
+                       command=lambda: SPC_P(), bg='#191970', fg='#ffffff', width=30)
+
     def SPC_U():
         SPC_U01_Master.SPC_U01_Master()
         SPC_U02_SlideMerge.SPC_U02_SlideMerge()
         SPC_U03_Master_Err.SPC_U03_Master_Err()
         SPC_U04_MasterMerge_Add.SPC_U04_MasterMerge_Add()
+
     button4 = tk.Button(root, text="Unit_price_master to SPC",
-                       command=lambda: SPC_U(), width=30)
+                       command=lambda: SPC_U(), bg='#0000CD', fg='#ffffff', width=30)
     button5 = tk.Button(root, text="Check_master to SPC",
-                       command=lambda: func1(), width=30)
+                       command=lambda: func1(), bg='#4169E1', fg='#ffffff', width=30)
     button14 = tk.Button(root, text="Over_list",
                        command=lambda: func1(), width=15)
     button15 = tk.Button(root, text="Error_list",
@@ -108,6 +124,15 @@ def select_func():
     root.mainloop()
     return
 
+
+def func_1():
+    SPC_P02_Zetta_Slide.SPC_P02_Zetta_Slide()
+
+def func_2():
+    SPC_P03_SPC_Slide.SPC_P03_SPC_Slide()
+
 if __name__ == '__main__':
+    th1 = threading.Thread(target=func_1)
+    th2 = threading.Thread(target=func_2)
     select_func()
     print('Finish!')

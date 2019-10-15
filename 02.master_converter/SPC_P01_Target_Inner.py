@@ -9,15 +9,17 @@ import datetime
 
 def SPC_P01_Target_Inner():
 
+    r_path = 'C:/temp/■Python_SPC_Master/'  # ★作業用ローカルフォルダ
+    path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'  # ★共通ファイル保存先
     print(datetime.datetime.now())
-    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
+
     # フォルダからExcelファイル名抽出　フルパス
     files = glob.glob(path + 'SPC_Global_inner/*.xlsx')
-    lists=[]
+    lists = []
     for file in files:
         #　フルパスからファイル名のみ抽出
         lists.append(file.replace(path + 'SPC_Global_inner', ''))
-    n=len(lists)
+    n = len(lists)
 
     # ファイルを開く　excel=立上ファイル
     for l in range(0, n):

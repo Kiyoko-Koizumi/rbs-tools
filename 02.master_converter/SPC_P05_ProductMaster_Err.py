@@ -5,7 +5,8 @@ import datetime
 
 def SPC_P05_ProductMaster_Err():
 
-    path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/temp_data/'
+    r_path = 'C:/temp/■Python_SPC_Master/'  # ★作業用ローカルフォルダ
+    path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/temp_data/'  # ★共通ファイル保存先
     print(datetime.datetime.now())
     # over_slide・sales(n)<sales(n+1)・purchase(n)<purchase(n+1)・slide1=(sales=0 and purchase>0) or (sales>0 and purchase=0)
     new_slide = (pd.read_csv(path + 'New_Slide.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
