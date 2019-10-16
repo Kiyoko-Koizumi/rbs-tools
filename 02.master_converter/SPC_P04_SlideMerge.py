@@ -5,7 +5,8 @@ import datetime
 
 def SPC_P04_SlideMerge():
 
-    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/temp_data/'
+    r_path = 'C:/temp/■Python_SPC_Master/'  # ★作業用ローカルフォルダ
+    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/temp_data/'  # ★共通ファイル保存先
     print(datetime.datetime.now())
     # zetta_slide=02_Zetta_Slide.py　spc_slide=03_SPC_Slide.py
     zetta_slide = (pd.read_csv(path + 'Zetta_Slide.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))

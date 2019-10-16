@@ -7,7 +7,8 @@ import datetime
 
 def SPC_P03_SPC_Slide():
 
-    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
+    r_path = 'C:/temp/■Python_SPC_Master/'  # ★作業用ローカルフォルダ
+    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'  # ★共通ファイル保存先
     print(datetime.datetime.now())
     # SPC_Product.txt」データ読み込み
     spc_product = (pd.read_csv(path + 'temp_data/SPC_Target.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
@@ -109,6 +110,7 @@ def SPC_P03_SPC_Slide():
     data.to_csv(path + 'temp_data/SPC_Slide.txt', sep='\t', encoding='utf_16', index=False)    # SPC_Slide.txt スライドデータのみ出力
 
     spc_data1 = spc_data1.rename(columns={'Subsidiary Code_x': 'Subsidiary Code'})
+    spc_data1 = spc_data1.drop(Header.Header_del(), axis=1) # スライド項目削除
     spc_data1.drop(columns=['分析コード', '立上日', '仕入先', 'Subsidiary Code_y'], inplace=True)    # 不要な列を削除
     spc_data1.drop_duplicates(subset=['Product Code'], keep='first', inplace=True)  # 型式の重複データ削除　先頭行残す
     spc_data1.to_csv(path + 'temp_data/SPC_Product.txt', sep='\t', encoding='utf_16', index=False)  # SPC_Product.txt　ALL出力

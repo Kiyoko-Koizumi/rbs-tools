@@ -6,8 +6,9 @@ import datetime
 
 def SPC_P06_ProductMerge():
 
+    r_path = 'C:/temp/■Python_SPC_Master/'  # ★作業用ローカルフォルダ
+    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/temp_data/'  # ★共通ファイル保存先
     print(datetime.datetime.now())
-    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/temp_data/'
 
     z_p = (pd.read_csv(path + 'Zetta_Product.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
     s_p = (pd.read_csv(path + 'SPC_Product.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))

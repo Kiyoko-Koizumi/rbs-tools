@@ -10,6 +10,7 @@
 # 長期連休時明けの受注増加考慮
 # FCを受注月でなく出荷月でやる
 # 出力に非稼働日を除いたサプライヤ向け出力を作成
+# アンフィット_グループ_YYYY.xlsxファイルからデータ作成
 
 # モジュールのインポート
 import os, tkinter, tkinter.filedialog, tkinter.messagebox
@@ -261,7 +262,7 @@ def Orders_prediction_for_Supplier():
                                      'JST変換受注時間・JST変換見積回答時間', '見積有効日', '見積有効時間', 'JST変換見積有効日', 'JST変換見積有効時間',
                                      'アンフィット種別', '得意先コード', '直送先コード', 'ＭＣコード', 'インナーコード', '商品コード', '実績現法コード', '実績仕入先コード',
                                      '実績管理単位コード', 'ACE仕入先コード', 'ACE仕入先カテゴリコード', '受注実績SSD', '見積回答SSD', '数量', '納入区分',
-                                     '顧客希望納期'])
+                                     '顧客希望納期', '置場コード1', '置場コード2'])
 
         # ファイルを繰り返し開き結合する
         for r in range(1, len(list_f)):
@@ -273,7 +274,7 @@ def Orders_prediction_for_Supplier():
                                              'JST変換受注日・JST変換見積回答日', 'JST変換受注時間・JST変換見積回答時間', '見積有効日', '見積有効時間',
                                              'JST変換見積有効日', 'JST変換見積有効時間', 'アンフィット種別', '得意先コード', '直送先コード', 'ＭＣコード',
                                              'インナーコード', '商品コード', '実績現法コード', '実績仕入先コード', '実績管理単位コード', 'ACE仕入先コード',
-                                             'ACE仕入先カテゴリコード', '受注実績SSD', '見積回答SSD', '数量', '納入区分', '顧客希望納期'])
+                                             'ACE仕入先カテゴリコード', '受注実績SSD', '見積回答SSD', '数量', '納入区分', '顧客希望納期', '置場コード1', '置場コード2'])
             # ファイルを追加する
             order = order.append(order_add, sort=False)
 
@@ -309,13 +310,13 @@ def Orders_prediction_for_Supplier():
         order = order[order['実績仕入先コード'] == pg_name]
 
         if len(order) > 0:
-
             # 受注日、出荷日をdate形式へ変更
             order = order.astype({'受注日': str, '受注実績SSD': str})
             order['受注日'] = order['受注日'].str[0:4] + '-' + order['受注日'].str[4:6] + '-' + order['受注日'].str[6:8]
             order['受注実績SSD'] = order['受注実績SSD'].str[0:4] + '-' + order['受注実績SSD'].str[4:6] + '-' + order['受注実績SSD'].str[
                                                                                                    6:8]
-
+            # 南通で実施の場合は広州向けSSDを1日前倒しする
+            order.loc[order[], '受注実績SSD']
             # 受注曜日カラムを追加
             order['weekday'] = [dt.datetime.strptime(x, "%Y-%m-%d").strftime('%a') for x in order['受注日']]
 
@@ -554,78 +555,6 @@ def Orders_prediction_for_Supplier():
             prediction_sup.to_csv(local_pass + f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n',
                               index=True)
 
-            # # 受注日*出荷日毎の数量を合計 日付の型をあとで修正
-            # prediction = prediction.groupby(['受注日', '出荷日'], as_index=False)['数量'].sum()
-            # prediction['受注日'] = pd.to_datetime(prediction['受注日'])
-            #
-            # q, mod = divmod(((Pre_E - Pre_S).days + 1), 20)
-            # FACILITY_DICT = {}
-            # FACILITY_DICT['0143'] = ['MJP', '0143', 'AIO']
-            # FACILITY_DICT['7017'] = ['MJP', '7017', 'MAL']
-            # FACILITY_DICT['3764'] = ['MJP', '3764', 'AAL']
-            # FACILITY_DICT['0FCN'] = ['CHN', '0FCN', 'FAL']
-            # FACILITY_DICT['0AIO'] = ['CHN', '0AIO', 'F2A']
-            # FACILITY_DICT['SPCM'] = ['VNM', 'SPCM', 'SAL']
-            #
-            # FACILITY_L = FACILITY_DICT[pg_name]
-            #
-            # # ■受注予測(d)　対象日から見た予測数量積み上げ分
-            # # マルチプロセス対応 マルチプロセス回数は20回とする
-            # pre_c = pd.DataFrame({'BASE_DATE': [], 'BASE_DATE_ADD_DAYS': [], 'PREDICTION_QUANTITY': []})
-            # pre_c = pre_c.astype({'BASE_DATE_ADD_DAYS': int, 'PREDICTION_QUANTITY': float})
-            # # q*20パート
-            # for s in range(0, q):
-            #     pool = Pool(multi.cpu_count() - 2)
-            #     list3 = [(d, Pre_S, prediction) for d in range((20 * s), (20 * s + 20))]
-            #     prediction_sum3 = pool.map(wrapper3, list3)
-            #     pool.close()
-            #     for d in range(0, 20):
-            #         pre_c = pre_c.append(prediction_sum3[d], sort=False)
-            # # modパート
-            # pool = Pool(multi.cpu_count() - 2)
-            # list3 = [(d, Pre_S, prediction) for d in range((20 * q), (20 * q + mod))]
-            # prediction_sum4 = pool.map(wrapper3, list3)
-            # pool.close()
-            # for d in range(0, mod):
-            #     pre_c = pre_c.append(prediction_sum4[d], sort=False)
-            #
-            # pre_c.reset_index(drop=True, inplace=True)
-            #
-            # Today = "'" + dt.datetime.today().strftime("%Y-%m-%d") + "'"
-            # pre_c.loc[:, 'SUBSIDIARY_CD'] = FACILITY_L[0]
-            # pre_c.loc[:, 'SUPPLIER_CD'] = FACILITY_L[1]
-            # pre_c.loc[:, 'FACILITY_CD'] = FACILITY_L[2]
-            # pre_c.loc[:, 'UPD_COUNT'] = '0'
-            # pre_c.loc[:, 'DEL_FLG'] = '0'
-            # pre_c.loc[:, 'REG_USR'] = None
-            # pre_c.loc[:, 'REG_TIME'] = Today
-            # pre_c.loc[:, 'UPD_USR'] = None
-            # pre_c.loc[:, 'UPD_TIME'] = Today
-            #
-            # prediction = pre_c
-            # prediction = prediction.loc[:,
-            #              ['SUBSIDIARY_CD', 'SUPPLIER_CD', 'FACILITY_CD', 'BASE_DATE', 'BASE_DATE_ADD_DAYS',
-            #               'PREDICTION_QUANTITY', 'UPD_COUNT', 'DEL_FLG', 'REG_USR', 'REG_TIME', 'UPD_USR', 'UPD_TIME']]
-            #
-            # '''
-            # # FACILITY_CD_ratioを読み込み、他の設備の予測も作成する
-            # FACI_r = pd.read_csv('FACILITY_CD_ratio.tsv', sep='\t', encoding=font, dtype=object, engine='python', error_bad_lines=False)
-            # FACI_r = FACI_r.astype({'ratio': float})
-            # prediction = pd.merge(prediction, FACI_r, on=['SUBSIDIARY_CD', 'SUPPLIER_CD'], how='left')
-            # prediction['PREDICTION_QUANTITY'] = (prediction['PREDICTION_QUANTITY'] * prediction['ratio']).round(2)
-            # prediction.drop(['FACILITY_CD_AL', 'ratio'], axis=1, inplace=True)
-            # prediction = prediction.loc[:,['SUBSIDIARY_CD', 'SUPPLIER_CD', 'FACILITY_CD', 'BASE_DATE', 'BASE_DATE_ADD_DAYS', 'PREDICTION_QUANTITY', 'UPD_COUNT', 'DEL_FLG', 'REG_USR', 'REG_TIME', 'UPD_USR', 'UPD_TIME']]
-            # '''
-            #
-            # # ファイルアウトプット
-            # prediction = prediction.round({'PREDICTION_QUANTITY': 3})
-            #
-            # f_name = pg_name + '_prediction.tsv'
-            # prediction.to_csv(local_pass + f_name, sep='\t', encoding=font, quotechar='"', line_terminator='\n', index=False)
-            #
-            # # 時間を表示
-            # dt_now = datetime.datetime.now()
-            # print(dt_now)
 
             print('受注予測作成 Finish!')
         else:

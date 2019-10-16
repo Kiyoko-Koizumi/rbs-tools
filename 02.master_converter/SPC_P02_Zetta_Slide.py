@@ -7,7 +7,8 @@ import datetime
 
 def SPC_P02_Zetta_Slide():
 
-    path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
+    r_path = 'C:/temp/■Python_SPC_Master/'  # ★作業用ローカルフォルダ
+    path = '//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'  # ★共通ファイル保存先
     print(datetime.datetime.now())
     # SPC_Product.txt」データ読み込み
     spc_product = (pd.read_csv(path + 'temp_data/SPC_Target.txt', sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
@@ -29,13 +30,11 @@ def SPC_P02_Zetta_Slide():
     # zetta_data1をHeader.pyで並び順を変更
     #zetta_data1 = Header.Header()    # ALLデータ出力用
     zetta_data1 = pd.DataFrame([], columns=Header.Header())    # ALLデータ出力用 こっちの記述でも出来ました。何となくしっくりくるのでこちらで。
-    #spc1 = pd.DataFrame()   # SPCの製作日数抽出
 
     for l in range(0, n):
         zetta = (pd.read_csv(path + 'Zetta_Product/' + lists[l], sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
         zetta_data = pd.merge(zetta, spc_product, on=['Subsidiary Code', 'Product Code'])  # 立上データの現法コードと型式が一致する現法データ
         zetta_data1 = zetta_data1.append(zetta_data, sort=False)
-
 
         for i in range(1, 11):
             i = str(i)
@@ -67,10 +66,10 @@ def SPC_P02_Zetta_Slide():
     # Days_Ts.excel 項目追加
     zetta_data1 = pd.merge(zetta_data1, days_ts, on='Subsidiary Code', how='left')
 
+    zetta_data1 = zetta_data1.drop(Header.Header_del(), axis=1) # スライド項目削除
     zetta_data1.drop(columns=['分析コード_x', '立上日', '仕入先', '分析コード_y', '分析コード名称', 'インナーコード', 'Weight Coefficient_y', 'Weight_Round前'], inplace=True)    # 不要な列を削除
     zetta_data1 = zetta_data1.rename(columns={'Weight_x': 'Weight', 'Weight Calc Mode_x': 'Weight Calc Mode', 'Weight Coefficient_x': 'Weight Coefficient', 'Weight Calc_x': 'Weight Calc'})
     zetta_data1.to_csv(path + 'temp_data/Zetta_Product.txt', sep='\t', encoding='utf_16', index=False)      # Zetta_Product.txt　ALL出力
-
     print('SPC_P02_Zetta_Slide')
     print(datetime.datetime.now())
 

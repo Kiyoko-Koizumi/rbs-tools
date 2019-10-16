@@ -8,8 +8,9 @@ import openpyxl
 
 def SPC_P07_ProductMaster_Add():
 
+    r_path = 'C:/temp/■Python_SPC_Master/'  # ★作業用ローカルフォルダ
+    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'  # ★共通ファイル保存先
     print(datetime.datetime.now())
-    path='//172.24.81.185/share1/share1c/加工品SBU/加工SBU共有/派遣/■Python_SPC_Master/'
 
     p = (pd.read_csv(path + 'temp_data/Product.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
     s = (pd.read_csv(path + 'temp_data/Product_Slide.txt',sep='\t', encoding='utf_16', dtype=object, engine='python', error_bad_lines=False))
@@ -70,7 +71,7 @@ def SPC_P07_ProductMaster_Add():
 
         df3 = df3.astype(Type.type())   # 検証用
         df3 = df3.replace('nan', '')
-        df3.to_excel(path + 'Update_txt/' + sub[i] + '_Product.xlsx', na_rep='', index=False)  # 検証用
+        #df3.to_excel(path + 'Update_txt/' + sub[i] + '_Product.xlsx', na_rep='', index=False)  # 検証用
         print(sub[i])
 
         if len(dfe.loc[dfe['Subsidiary Code'] == sub[i]]) > 0:  # err_listを現法毎にExcelに出力 フォルダ「Err_Excel」
