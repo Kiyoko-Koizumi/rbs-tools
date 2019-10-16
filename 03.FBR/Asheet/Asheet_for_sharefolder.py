@@ -60,8 +60,8 @@ FC_FCNSPC.rename(columns={'level_6': '月', 0: '数量の合計'}, inplace=True)
 FC_SPCD.rename(columns={'level_6': '月', 0: '数量の合計'}, inplace=True)
 FC_MJP.rename(columns={'level_5': '月', 0: '数量の合計'}, inplace=True)
 FC_CHNKOR.rename(columns={'level_3': '月', 0: '数量の合計'}, inplace=True)
-CORR.rename(columns={'level_5': '月', 0: '数量の合計'}, inplace=True)
-CORR.loc[:, '現法'] = '補正値'
+CORR.rename(columns={'level_5': '月', 0: '数量の合計', '理由': '現法'}, inplace=True)# 理由カラムを現法へ
+#CORR.loc[:, '現法'] = '補正値'
 # 補正値をin/outデータを±で行を複製する
 CORR = CORR.astype({'数量の合計': float})
 CORR_out = CORR[CORR['元仕入先'].notnull()].copy()
