@@ -18,7 +18,7 @@ import datetime
 Output = pd.DataFrame()
 
 #内製用のシート取込
-files=glob.glob('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/*能力確認B_*.xlsx')#フォルダ決めよう
+files=glob.glob('C:/Users/Aoi_Fujishita/能力調整確認シート/*能力確認B_*.xlsx')#フォルダ決めよう
 for file in files:
     input_file_name = (file)
     #生産能力(実力値)
@@ -113,7 +113,7 @@ for file in files:
     Output = Output.append([CAP,CAP_inv])
 
 #外製用のシート取込
-files1 = glob.glob('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/*能力確認A_*.xlsx') #フォルダ決めよう
+files1 = glob.glob('C:/Users/Aoi_Fujishita/能力調整確認シート/*能力確認A_*.xlsx') #フォルダ決めよう
 for file1 in files1:
     input_file_name1 = (file1)
     input_book = pd.ExcelFile(input_file_name1)
@@ -216,7 +216,7 @@ for file1 in files1:
 Output['フラグ'].astype(int)
 
 #その他のシート取込
-files2 = glob.glob('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/その他調整.xlsx')#フォルダ決めよう
+files2 = glob.glob('C:/Users/Aoi_Fujishita/能力調整確認シート/その他調整.xlsx')#フォルダ決めよう
 for file2 in files2:
     input_file_name2 = (file2)
     #需要予測数
@@ -288,7 +288,6 @@ for file2 in files2:
 
 
 # ファイルアウトプット
-f_name ='//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/output/' + dt.datetime.today().strftime(
-        "%Y%m%d") + 'データ貼り付け用'+'.tsv'
+f_name = 'output.tsv'
 Output.to_csv(f_name, sep='\t', encoding='utf-8', index=False)
 print('DONE!')
