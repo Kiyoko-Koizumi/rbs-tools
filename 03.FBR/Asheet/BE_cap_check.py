@@ -290,4 +290,4 @@ for file2 in files2:
 # ファイルアウトプット
 f_name =  '//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/output/生産能力値用シート貼り付け用' + dt.datetime.today().strftime("%Y%m%d") + '.tsv'
 Output.to_csv(f_name, sep='\t', encoding='utf-8', index=False)
-print('BE能力調整の反映用ファイルができました。')
+print('処理が完了しました')
