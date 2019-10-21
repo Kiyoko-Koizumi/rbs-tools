@@ -286,7 +286,7 @@ for file2 in files2:
     df_for_cap_inv = df_for_cap_inv.loc[:, ['製造GR', '管理Gr', '集計年月', '確定年月', 'データ名', '値', 'フラグ']]
     Output = Output.append([df_for_cap, df_for_cap_inv])
 
-
+Output.replace({'生産能力（実力値）': '生産能力実力値','生産能力（投資済）': '生産能力投資済'}, inplace=True)
 # ファイルアウトプット
 f_name =  '//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/output/生産能力値用シート貼り付け用' + dt.datetime.today().strftime("%Y%m%d") + '.tsv'
 Output.to_csv(f_name, sep='\t', encoding='utf-8', index=False)
