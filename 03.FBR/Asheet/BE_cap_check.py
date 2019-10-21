@@ -244,7 +244,7 @@ for file2 in files2:
 
     #まずは生産能力(実力値)
     df_for_cap = df_others_fc.join(df_others_cap)
-    df_for_cap.fillna(0, inplace=True)
+    df_for_cap.fillna(0.0, inplace=True)
     df_for_cap['値'] = np.where(df_for_cap['値1'] != df_for_cap['値2'], df_for_cap['値1']-df_for_cap['値2'], 0)
 
     # 値が０であれば消す=0でないデータを取り出す
