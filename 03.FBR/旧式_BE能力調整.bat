@@ -26,7 +26,7 @@
 
  
 
-python %~dp0\Asheet\旧式_BE_cap_check.py
+python %~dp0\Asheet\Previous_BE_cap_check.py
 
  
 
