@@ -18,7 +18,7 @@ import datetime
 Output = pd.DataFrame()
 
 #内製用のシート取込
-files=glob.glob('C:/Users/Aoi_Fujishita/能力調整確認シート/*能力確認B_*.xlsx')#//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/*能力確認B_*.xlsx'
+files=glob.glob('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/*能力確認B_*.xlsx')#C:/Users/Aoi_Fujishita/能力調整確認シート/*能力確認B_*.xlsx
 for file in files:
     input_file_name = (file)
     #生産能力(実力値)
@@ -134,7 +134,7 @@ for file in files:
     Output = Output.append([CAP,Add_CAP,CAP_inv,Add_CAP_inv])
 
 #外製用のシート取込
-files1 = glob.glob('C:/Users/Aoi_Fujishita/能力調整確認シート/*能力確認A_*.xlsx') #//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/*能力確認A_*.xlsx
+files1 = glob.glob('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/*能力確認A_*.xlsx') #C:/Users/Aoi_Fujishita/能力調整確認シート/*能力確認A_*.xlsx
 for file1 in files1:
     input_file_name1 = (file1)
     input_book = pd.ExcelFile(input_file_name1)
@@ -196,8 +196,8 @@ for file1 in files1:
 
     #シート名から管理Gr生成
     CAP1['Supplier'] = sheet_name
-    # FBR帳票用サプライヤー名ファイルの読み込み //172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/稼働日カレンダー
-    SP_name = pd.read_csv('C:/Users/Aoi_Fujishita/能力調整確認シート/SP_name.csv', encoding='utf-8',
+    # FBR帳票用サプライヤー名ファイルの読み込み
+    SP_name = pd.read_csv('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/稼働日カレンダー/SP_name.csv', encoding='utf-8',
                           dtype='object', index_col=None)
     # calendarのカラムを管理Grに揃える
     CAP1 = pd.merge(CAP1, SP_name, on=['Supplier'], how='left')
@@ -267,7 +267,7 @@ for file1 in files1:
 
 
 #その他のシート取込
-files2 = glob.glob('C:/Users/Aoi_Fujishita/能力調整確認シート/その他調整.xlsx')#//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/その他調整.xlsx
+files2 = glob.glob('//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/その他調整.xlsx')#C:/Users/Aoi_Fujishita/能力調整確認シート/その他調整.xlsx
 for file2 in files2:
     input_file_name2 = (file2)
     #需要予測数
@@ -356,6 +356,6 @@ for file2 in files2:
 
 
 # ファイルアウトプット
-f_name = 'Output.tsv'  #'//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/output/生産能力値用シート貼り付け用' + dt.datetime.today().strftime("%Y%m%d") + '.tsv'
+f_name = '//172.24.81.161/share/F加工企業体/生産計画/共用/FBR資料/能力調整確認シート/output/生産能力値用シート貼り付け用' + dt.datetime.today().strftime("%Y%m%d") + '.tsv'
 Output.to_csv(f_name, sep='\t', encoding='utf-8', index=False)
 print('処理が完了しました')
