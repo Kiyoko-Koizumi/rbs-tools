@@ -18,7 +18,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import sqlite3
 
-csv.field_size_limit(1000000000)
+# csv.field_size_limit(1000000000)
 
 #font="utf-8"
 font='shift_jisx0213'
