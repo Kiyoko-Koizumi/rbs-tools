@@ -124,9 +124,10 @@ f_name=os.path.basename(list_f[0])
 f_pass=os.path.dirname(list_f[0])
 os.chdir(f_pass)
 
-# 必要な列のみ読み込む
 print(f_name)
+# 必要な列のみ読み込む
 # df = pd.read_csv(f_name, sep='\t', encoding=font, dtype=object, engine='python', error_bad_lines=False, usecols=['SUBSIDIARY_CD', 'SUPPSUB_CD','GLOBAL_NO', 'SO_DATE', 'SO_TIME', 'STOCK_DIV', 'CUST_CD', 'SHIP_TO_CD', 'MC_CD', 'INNER_CD', 'PRODUCT_CD', 'SUPPLIER_CD', 'SO_QTY', 'DELI_DIV','SSD', 'VSD', 'CUST_CATEGORY_CD', 'SUPPLIER_CATEGORY_CD', 'SUPPSUB_SUPPLIER_CD', 'SHIPMENT_FIX_DATE','MC_PLANT_DIV'])
+# すべての列を読み込む
 df = pd.read_csv(f_name, sep='\t', encoding=font, dtype=object, engine='python', error_bad_lines=False)
 
 '''
@@ -195,7 +196,7 @@ for s in range(14):
 # 列を限定する
 df = df[['SUBSIDIARY_CD', 'SUPPSUB_CD','GLOBAL_NO', 'SO_DATE', 'SO_TIME', 'STOCK_DIV', 'CUST_CD', 'SHIP_TO_CD', 'MC_CD', 'INNER_CD', 'PRODUCT_CD', 'SUPPLIER_CD', 'SO_QTY', 'DELI_DIV','SSD', 'VSD', 'CUST_CATEGORY_CD', 'SUPPLIER_CATEGORY_CD', 'SUPPSUB_SUPPLIER_CD', 'SHIPMENT_FIX_DATE','MC_PLANT_DIV', 'WEIGHT', 'WEIGHT_UNIT']]
 
-# Sub1,Sub2,B調達RECに分ける
+# recを A調達(Sub1,Sub2),B調達 に分ける
 Sub1 = df[(((df['CUST_CATEGORY_CD'] == '03') | (df['CUST_CATEGORY_CD'] == '04') | (df['CUST_CATEGORY_CD'] == '05') | (df['CUST_CATEGORY_CD'] == '06')) & ((df['SUPPLIER_CATEGORY_CD'] == '01') | (df['SUPPLIER_CATEGORY_CD'] == '02')))]
 Sub2 = df[(((df['SUPPLIER_CATEGORY_CD'] == '03') | (df['SUPPLIER_CATEGORY_CD'] == '04') | (df['SUPPLIER_CATEGORY_CD'] == '05') | (df['SUPPLIER_CATEGORY_CD'] == '06')) & ((df['CUST_CATEGORY_CD'] == '01') | (df['CUST_CATEGORY_CD'] == '02'))) ]
 Bcho = df[(((df['CUST_CATEGORY_CD'] == '03') | (df['CUST_CATEGORY_CD'] == '04') | (df['CUST_CATEGORY_CD'] == '05') | (df['CUST_CATEGORY_CD'] == '06')) & ((df['SUPPLIER_CATEGORY_CD'] == '03') | (df['SUPPLIER_CATEGORY_CD'] == '04') | (df['SUPPLIER_CATEGORY_CD'] == '05') | (df['SUPPLIER_CATEGORY_CD'] == '06')))]
